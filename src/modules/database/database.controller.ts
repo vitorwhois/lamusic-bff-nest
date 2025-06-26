@@ -7,7 +7,7 @@ import { SupabaseService } from './supabase.service';
  */
 @Controller('database')
 export class DatabaseController {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(private readonly supabaseService: SupabaseService) { }
 
   /**
    * Endpoint para verificar o status da conexão com o banco

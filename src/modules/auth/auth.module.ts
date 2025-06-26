@@ -10,4 +10,4 @@ import { Module } from '@nestjs/common';
   providers: [],
   exports: [],
 })
-export class AuthModule {}
+export class AuthModule { }

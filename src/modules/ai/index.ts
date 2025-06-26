@@ -1,9 +1,8 @@
 /**
- * Arquivo de índice para o módulo de IA
- * Facilita as importações centralizando as exportações
+ * Exports centralizados do módulo de IA
  */
-
-export { AiModule } from './ai.module';
-export { AiService, AiResponse, GenerationOptions } from './ai.service';
+export { AiService } from './ai.service';
 export { AiController } from './ai.controller';
-export * from './prompts';
+export { AiModule } from './ai.module';
+export * from './ai.types';
+export { PromptTemplate, PROMPT_CONFIGS } from './prompts';

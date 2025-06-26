@@ -1,18 +1,14 @@
-import { Module, Global } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { AiController } from './ai.controller';
 
 /**
- * Módulo de Inteligência Artificial
- * Responsável pela integração com Google Gemini para processamento de texto e geração de conteúdo
- * Marcado como Global para estar disponível em toda a aplicação
+ * Módulo de IA CORRIGIDO
+ * Remove dependências quebradas
  */
-@Global()
 @Module({
-  imports: [ConfigModule],
   controllers: [AiController],
   providers: [AiService],
   exports: [AiService],
 })
-export class AiModule {}
+export class AiModule { }

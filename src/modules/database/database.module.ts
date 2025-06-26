@@ -15,4 +15,4 @@ import { DatabaseController } from './database.controller';
   providers: [SupabaseService],
   exports: [SupabaseService],
 })
-export class DatabaseModule {}
+export class DatabaseModule { }

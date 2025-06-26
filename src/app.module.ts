@@ -18,14 +18,14 @@ import { LogsModule } from './modules/logs/logs.module';
     // Módulos de infraestrutura (carregados primeiro)
     ConfigModule,
     DatabaseModule,
-    
+
     // Módulos de funcionalidade core
     AuthModule,
     AiModule,
     SuppliersModule,
     CategoriesModule,
     ProductsModule,
-    
+
     // Módulos de processo de negócio
     ImportModule,
     LogsModule,
@@ -33,4 +33,4 @@ import { LogsModule } from './modules/logs/logs.module';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

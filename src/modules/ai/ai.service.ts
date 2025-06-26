@@ -1,32 +1,12 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-import { PromptBuilder, NfePromptBuilder } from './prompts';
+import { PromptTemplate, PROMPT_CONFIGS } from './prompts';
+import { AiResponse, GenerationOptions, ProductInfo, DescriptionInfo, AiServiceStatus } from './ai.types';
 
 /**
- * Interface para respostas padronizadas da IA
- */
-export interface AiResponse {
-  success: boolean;
-  data?: string;
-  error?: string;
-  tokensUsed?: number;
-  processingTime?: number;
-}
-
-/**
- * Interface para opções de geração de texto
- */
-export interface GenerationOptions {
-  temperature?: number;
-  maxTokens?: number;
-  topP?: number;
-  topK?: number;
-}
-
-/**
- * Serviço responsável pela integração com Google Gemini AI
- * Fornece funcionalidades de geração de texto e processamento de linguagem natural
+ * Serviço de IA OTIMIZADO
+ * Configuração dinâmica via .env com rate limiting integrado
  */
 @Injectable()
 export class AiService implements OnModuleInit {
@@ -35,93 +15,145 @@ export class AiService implements OnModuleInit {
   private model: GenerativeModel;
   private isInitialized = false;
 
-  constructor(private readonly configService: ConfigService) {}
+  // Rate limiting
+  private requestCount = 0;
+  private lastReset = Date.now();
+  private readonly maxRequestsPerMinute: number;
 
-  /**
-   * Inicializa o cliente Google Gemini durante a inicialização do módulo
-   * Valida a API key e configura o modelo
-   */
+  // Configurações dinâmicas do .env
+  private readonly modelName: string;
+  private readonly defaultConfig: {
+    temperature: number;
+    maxOutputTokens: number;
+    topP: number;
+    topK: number;
+  };
+
+  constructor(private readonly configService: ConfigService) {
+    // Carrega todas as configurações do .env
+    this.modelName = this.configService.get<string>('GEMINI_MODEL', 'gemini-1.5-flash');
+    this.maxRequestsPerMinute = this.configService.get<number>('GEMINI_REQUESTS_PER_MINUTE', 15);
+
+    this.defaultConfig = {
+      temperature: this.configService.get<number>('GEMINI_TEMPERATURE', 0.2),
+      maxOutputTokens: this.configService.get<number>('GEMINI_MAX_TOKENS', 256),
+      topP: this.configService.get<number>('GEMINI_TOP_P', 0.8),
+      topK: this.configService.get<number>('GEMINI_TOP_K', 20),
+    };
+  }
+
   async onModuleInit() {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
 
     if (!apiKey) {
-      this.logger.error('❌ GEMINI_API_KEY não encontrada nas variáveis de ambiente');
-      throw new Error('GEMINI_API_KEY é obrigatória para o funcionamento da IA');
+      this.logger.error('❌ GEMINI_API_KEY não encontrada');
+      throw new Error('GEMINI_API_KEY é obrigatória');
     }
 
     try {
       this.googleAI = new GoogleGenerativeAI(apiKey);
-      
-      // Configurando o modelo Gemini Pro
-      this.model = this.googleAI.getGenerativeModel({ 
-        model: 'gemini-pro',
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        },
+
+      // Usa configurações dinâmicas do .env
+      this.model = this.googleAI.getGenerativeModel({
+        model: this.modelName,
+        generationConfig: this.defaultConfig,
       });
 
       this.isInitialized = true;
-      this.logger.log('✅ Google Gemini AI inicializado com sucesso');
-      
-      // Teste de conectividade
+      this.logger.log(`✅ Google Gemini AI inicializado`);
+      this.logger.log(`🤖 Modelo: ${this.modelName}`);
+      this.logger.log(`⚙️ Config: temp=${this.defaultConfig.temperature}, tokens=${this.defaultConfig.maxOutputTokens}, rate=${this.maxRequestsPerMinute}/min`);
+
       await this.testConnection();
     } catch (error) {
-      this.logger.error('❌ Erro ao inicializar Google Gemini AI:', error.message);
+      this.logger.error('❌ Erro ao inicializar Gemini:', error.message);
       throw error;
     }
   }
 
   /**
-   * Gera texto baseado em um prompt
-   * @param prompt - O prompt para geração de texto
-   * @param options - Opções opcionais para a geração
-   * @returns Promise<AiResponse> - Resposta da IA com o texto gerado
+   * Controle de rate limiting
+   */
+  private async checkRateLimit(): Promise<void> {
+    const now = Date.now();
+    const oneMinute = 60 * 1000;
+
+    // Reset contador a cada minuto
+    if (now - this.lastReset > oneMinute) {
+      this.requestCount = 0;
+      this.lastReset = now;
+      this.logger.debug(`🔄 Rate limit resetado. Contador: 0/${this.maxRequestsPerMinute}`);
+    }
+
+    // Verifica se excedeu o limite
+    if (this.requestCount >= this.maxRequestsPerMinute) {
+      const waitTime = oneMinute - (now - this.lastReset);
+      this.logger.warn(`⏱️ Rate limit atingido (${this.requestCount}/${this.maxRequestsPerMinute}). Aguardando ${Math.ceil(waitTime / 1000)}s`);
+
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      this.requestCount = 0;
+      this.lastReset = Date.now();
+    }
+
+    this.requestCount++;
+    this.logger.debug(`📊 Request ${this.requestCount}/${this.maxRequestsPerMinute} no último minuto`);
+  }
+
+  /**
+   * Geração de texto com configurações otimizadas e rate limiting
    */
   async generateText(prompt: string, options?: GenerationOptions): Promise<AiResponse> {
     if (!this.isInitialized) {
-      throw new Error('Serviço de IA não foi inicializado');
+      throw new Error('Serviço de IA não inicializado');
     }
+
+    // Aplica rate limiting
+    await this.checkRateLimit();
 
     const startTime = Date.now();
 
     try {
-      this.logger.debug(`🤖 Gerando texto para prompt: ${prompt.substring(0, 100)}...`);
+      // Combina configurações padrão (.env) com options específicas
+      const finalConfig = {
+        temperature: options?.temperature ?? this.defaultConfig.temperature,
+        topK: options?.topK ?? this.defaultConfig.topK,
+        topP: options?.topP ?? this.defaultConfig.topP,
+        maxOutputTokens: options?.maxTokens ?? this.defaultConfig.maxOutputTokens,
+      };
 
-      // Aplicar configurações personalizadas se fornecidas
-      let modelToUse = this.model;
-      if (options) {
-        modelToUse = this.googleAI.getGenerativeModel({
-          model: 'gemini-pro',
-          generationConfig: {
-            temperature: options.temperature ?? 0.7,
-            topK: options.topK ?? 40,
-            topP: options.topP ?? 0.95,
-            maxOutputTokens: options.maxTokens ?? 1024,
-          },
-        });
-      }
+      // Usa modelo customizado se options foram fornecidas, senão usa o padrão
+      const model = options ? this.googleAI.getGenerativeModel({
+        model: this.modelName,
+        generationConfig: finalConfig,
+      }) : this.model;
 
-      const result = await modelToUse.generateContent(prompt);
+      const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
       const processingTime = Date.now() - startTime;
+      const tokensUsed = Math.ceil(text.length / 4);
 
-      this.logger.log(`✅ Texto gerado com sucesso em ${processingTime}ms`);
+      this.logger.debug(`✅ Texto gerado: ${tokensUsed} tokens em ${processingTime}ms`);
 
       return {
         success: true,
         data: text,
         processingTime,
-        // Nota: Gemini não retorna informações de tokens diretamente
-        tokensUsed: Math.ceil(text.length / 4), // Estimativa aproximada
+        tokensUsed,
       };
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      this.logger.error(`❌ Erro na geração de texto: ${error.message}`);
+      this.logger.error(`❌ Erro na geração (${processingTime}ms): ${error.message}`);
+
+      // Log específico para diferentes tipos de erro
+      if (error.message.includes('RATE_LIMIT_EXCEEDED')) {
+        this.logger.warn('⚠️ Rate limit excedido pela API do Google');
+      } else if (error.message.includes('QUOTA_EXCEEDED')) {
+        this.logger.warn('⚠️ Quota diária excedida');
+      } else if (error.message.includes('INVALID_API_KEY')) {
+        this.logger.error('🔑 API Key inválida');
+      }
 
       return {
         success: false,
@@ -132,127 +164,281 @@ export class AiService implements OnModuleInit {
   }
 
   /**
-   * Categoriza um produto baseado em suas informações
-   * Utiliza prompt específico para categorização de produtos musicais
-   * @param productInfo - Informações do produto para categorização
-   * @returns Promise<AiResponse> - Resposta com sugestões de categoria
+   * Categorização otimizada para o modelo flash
    */
-  async categorizeProduct(productInfo: {
-    name: string;
-    description?: string;
-    brand?: string;
-    sku?: string;
-  }): Promise<AiResponse> {
-    const prompt = PromptBuilder.buildCategorizationPrompt(productInfo);
-    
-    return this.generateText(prompt, {
-      temperature: 0.3, // Menor temperatura para mais consistência
-      maxTokens: 512,
-    });
-  }
+  async categorizeProduct(productInfo: ProductInfo): Promise<AiResponse> {
+    if (!this.isInitialized) {
+      return {
+        success: true,
+        data: 'acessorios',
+        error: 'IA não disponível',
+      };
+    }
 
-  /**
-   * Gera descrição otimizada para SEO baseada nas informações do produto
-   * @param productInfo - Informações básicas do produto
-   * @returns Promise<AiResponse> - Descrição otimizada gerada
-   */
-  async generateProductDescription(productInfo: {
-    name: string;
-    category?: string;
-    features?: string[];
-    brand?: string;
-  }): Promise<AiResponse> {
-    const prompt = PromptBuilder.buildDescriptionPrompt(productInfo);
-    
-    return this.generateText(prompt, {
-      temperature: 0.6,
-      maxTokens: 800,
-    });
-  }
+    const startTime = Date.now();
 
-  /**
-   * Extrai informações estruturadas de texto livre (útil para NFEs)
-   * @param text - Texto para extração de informações
-   * @param extractionType - Tipo de extração (product, supplier, etc.)
-   * @returns Promise<AiResponse> - Informações extraídas em formato estruturado
-   */
-  async extractStructuredInfo(text: string, extractionType: 'product' | 'supplier'): Promise<AiResponse> {
-    const prompt = NfePromptBuilder.buildNfeExtractionPrompt(text, extractionType);
-    
-    return this.generateText(prompt, {
-      temperature: 0.2, // Baixa temperatura para máxima precisão
-      maxTokens: 1024,
-    });
-  }
-
-  /**
-   * Valida se um texto de NFE contém dados úteis para importação
-   * @param nfeText - Texto da NFE para validação
-   * @returns Promise<AiResponse> - Resultado da validação
-   */
-  async validateNfe(nfeText: string): Promise<AiResponse> {
-    const prompt = NfePromptBuilder.buildValidationPrompt(nfeText);
-    
-    return this.generateText(prompt, {
-      temperature: 0.1,
-      maxTokens: 256,
-    });
-  }
-
-  /**
-   * Extrai múltiplos produtos de uma NFE
-   * @param nfeText - Texto completo da NFE
-   * @returns Promise<AiResponse> - Array de produtos extraídos
-   */
-  async extractMultipleProducts(nfeText: string): Promise<AiResponse> {
-    const prompt = NfePromptBuilder.buildMultiProductExtractionPrompt(nfeText);
-    
-    return this.generateText(prompt, {
-      temperature: 0.2,
-      maxTokens: 2048,
-    });
-  }
-
-  /**
-   * Categoriza múltiplos produtos em lote
-   * @param products - Array de produtos para categorização
-   * @returns Promise<AiResponse> - Categorias sugeridas para cada produto
-   */
-  async batchCategorizeProducts(products: any[]): Promise<AiResponse> {
-    const prompt = NfePromptBuilder.buildBatchCategorizationPrompt(products);
-    
-    return this.generateText(prompt, {
-      temperature: 0.3,
-      maxTokens: 1536,
-    });
-  }
-
-  /**
-   * Testa a conectividade com a API do Google Gemini
-   */
-  private async testConnection(): Promise<void> {
     try {
-      const testPrompt = 'Responda apenas "OK" se você está funcionando corretamente.';
-      const result = await this.generateText(testPrompt);
-      
-      if (result.success) {
-        this.logger.log('🔌 Conectividade com Google Gemini verificada');
-      } else {
-        this.logger.warn('⚠️ Aviso no teste de conectividade:', result.error);
+      const prompt = PromptTemplate.buildCategorization(productInfo);
+
+      // Configurações específicas para categorização (mais econômica)
+      const categoryConfig = {
+        temperature: 0.1,  // Máxima precisão
+        maxTokens: 16,     // Só precisa de 1 palavra
+        topP: 0.7,
+        topK: 10,
+      };
+
+      const result = await this.generateText(prompt, categoryConfig);
+
+      if (!result.success) {
+        return {
+          success: true,
+          data: 'acessorios',
+          error: `Erro na IA: ${result.error}`,
+          processingTime: Date.now() - startTime,
+        };
       }
+
+      const category = this.cleanCategoryResponse(result.data?.trim() || '');
+
+      this.logger.log(`🏷️ Produto "${productInfo.name}" → ${category} (${result.processingTime}ms, ${result.tokensUsed} tokens)`);
+
+      return {
+        success: true,
+        data: category,
+        processingTime: Date.now() - startTime,
+        tokensUsed: result.tokensUsed,
+      };
     } catch (error) {
-      this.logger.warn(`⚠️ Aviso na verificação de conectividade: ${error.message}`);
+      this.logger.error('❌ Erro na categorização:', error);
+      return {
+        success: true,
+        data: 'acessorios',
+        error: error.message,
+        processingTime: Date.now() - startTime,
+      };
     }
   }
 
   /**
-   * Retorna status do serviço de IA
+   * Geração de descrição de produto
    */
-  getStatus(): { initialized: boolean; model: string; timestamp: Date } {
+  async generateProductDescription(productInfo: DescriptionInfo): Promise<AiResponse> {
+    const prompt = PromptTemplate.buildDescription(productInfo);
+
+    // Configurações específicas para descrição
+    const descriptionConfig = {
+      temperature: 0.6,  // Mais criativo
+      maxTokens: 400,    // Mais tokens para descrição completa
+      topP: 0.9,
+    };
+
+    return this.generateText(prompt, descriptionConfig);
+  }
+
+  /**
+   * Método auxiliar para compatibilidade (usado pelo ProductsService)
+   */
+  async getCategorySlug(productInfo: ProductInfo): Promise<string> {
+    const result = await this.categorizeProduct(productInfo);
+    return result.data || 'acessorios';
+  }
+
+  /**
+   * Extração estruturada de NFE
+   */
+  async extractStructuredInfo(text: string, extractionType: 'product' | 'supplier'): Promise<AiResponse> {
+    const prompt = PromptTemplate.buildNfeExtraction(text, extractionType);
+
+    // Configurações para extração de dados estruturados
+    const extractionConfig = {
+      temperature: 0.05, // Máxima precisão
+      maxTokens: 1024,   // Suficiente para múltiplos produtos
+      topP: 0.6,
+    };
+
+    return this.generateText(prompt, extractionConfig);
+  }
+
+  /**
+   * Validação de NFE
+   */
+  async validateNfe(nfeText: string): Promise<AiResponse> {
+    const prompt = PromptTemplate.buildNfeValidation(nfeText);
+
+    // Configurações para validação
+    const validationConfig = {
+      temperature: 0.05, // Máxima precisão
+      maxTokens: 64,     // Resposta curta
+      topP: 0.6,
+    };
+
+    return this.generateText(prompt, validationConfig);
+  }
+
+  /**
+   * Extração de múltiplos produtos
+   */
+  async extractMultipleProducts(nfeText: string): Promise<AiResponse> {
+    const prompt = PromptTemplate.buildProductExtraction(nfeText);
+
+    // Configurações para extração múltipla
+    const multiExtractionConfig = {
+      temperature: 0.05,
+      maxTokens: 1536,   // Mais tokens para múltiplos produtos
+      topP: 0.6,
+    };
+
+    return this.generateText(prompt, multiExtractionConfig);
+  }
+
+  /**
+   * Categorização em lote
+   */
+  async batchCategorizeProducts(products: Array<{ name: string; description?: string }>): Promise<AiResponse> {
+    const prompt = PromptTemplate.buildBatchCategorization(products);
+
+    // Configurações para lote
+    const batchConfig = {
+      temperature: 0.1,
+      maxTokens: products.length * 20, // Dinâmico baseado na quantidade
+      topP: 0.7,
+    };
+
+    return this.generateText(prompt, batchConfig);
+  }
+
+  /**
+   * Limpa resposta da IA e garante slug válido
+   */
+  private cleanCategoryResponse(response: string): string {
+    const validSlugs = ['cordas', 'audio', 'percussao', 'acessorios', 'teclas-e-sopro'];
+    const cleaned = response.toLowerCase().trim();
+
+    // Retorna diretamente se for um slug válido
+    if (validSlugs.includes(cleaned)) {
+      return cleaned;
+    }
+
+    // Mapeamento de variações comuns
+    const mappings: Record<string, string> = {
+      'instrumentos de corda': 'cordas',
+      'corda': 'cordas',
+      'cordas musicais': 'cordas',
+      'string': 'cordas',
+      'equipamentos de áudio': 'audio',
+      'áudio': 'audio',
+      'audio': 'audio',
+      'som': 'audio',
+      'amplificação': 'audio',
+      'amplificador': 'audio',
+      'mixer': 'audio',
+      'microfone': 'audio',
+      'instrumentos de percussão': 'percussao',
+      'percussao': 'percussao',
+      'bateria': 'percussao',
+      'tambor': 'percussao',
+      'prato': 'percussao',
+      'drums': 'percussao',
+      'acessórios': 'acessorios',
+      'acessorios musicais': 'acessorios',
+      'cabo': 'acessorios',
+      'estante': 'acessorios',
+      'case': 'acessorios',
+      'teclas': 'teclas-e-sopro',
+      'teclado': 'teclas-e-sopro',
+      'sopro': 'teclas-e-sopro',
+      'piano': 'teclas-e-sopro',
+      'flauta': 'teclas-e-sopro',
+      'saxofone': 'teclas-e-sopro',
+      'keyboard': 'teclas-e-sopro',
+    };
+
+    const mapped = mappings[cleaned];
+    if (mapped) {
+      this.logger.debug(`🔄 Mapeamento: "${cleaned}" → ${mapped}`);
+      return mapped;
+    }
+
+    this.logger.warn(`⚠️ Categoria desconhecida: "${response}", usando fallback (acessorios)`);
+    return 'acessorios';
+  }
+
+  /**
+   * Teste de conectividade
+   */
+  private async testConnection(): Promise<void> {
+    try {
+      const testConfig = {
+        temperature: 0.1,
+        maxTokens: 8,
+        topP: 0.5,
+      };
+
+      const result = await this.generateText('Responda apenas: OK', testConfig);
+      if (result.success) {
+        this.logger.log(`🔌 Conectividade verificada (${result.processingTime}ms)`);
+      } else {
+        this.logger.warn(`⚠️ Problema na conectividade: ${result.error}`);
+      }
+    } catch (error) {
+      this.logger.warn(`⚠️ Aviso na conectividade: ${error.message}`);
+    }
+  }
+
+  /**
+   * Status detalhado do serviço
+   */
+  getStatus(): AiServiceStatus & {
+    config: any;
+    rateLimit: {
+      current: number;
+      max: number;
+      resetTime: Date
+    }
+  } {
+    const oneMinute = 60 * 1000;
+    const resetTime = new Date(this.lastReset + oneMinute);
+
     return {
       initialized: this.isInitialized,
-      model: 'gemini-pro',
+      model: this.modelName,
       timestamp: new Date(),
+      config: {
+        temperature: this.defaultConfig.temperature,
+        maxTokens: this.defaultConfig.maxOutputTokens,
+        topP: this.defaultConfig.topP,
+        topK: this.defaultConfig.topK,
+      },
+      rateLimit: {
+        current: this.requestCount,
+        max: this.maxRequestsPerMinute,
+        resetTime,
+      },
+    };
+  }
+
+  /**
+   * Verifica se IA está disponível
+   */
+  isAvailable(): boolean {
+    return this.isInitialized;
+  }
+
+  /**
+   * Estatísticas de uso (útil para monitoring)
+   */
+  getUsageStats(): {
+    requestsThisMinute: number;
+    maxRequestsPerMinute: number;
+    model: string;
+    isRateLimited: boolean;
+  } {
+    return {
+      requestsThisMinute: this.requestCount,
+      maxRequestsPerMinute: this.maxRequestsPerMinute,
+      model: this.modelName,
+      isRateLimited: this.requestCount >= this.maxRequestsPerMinute,
     };
   }
 }

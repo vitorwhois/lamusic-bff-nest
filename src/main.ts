@@ -8,7 +8,7 @@ import { ValidationPipe } from '@nestjs/common';
  */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   // Configuração de validação global
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
@@ -27,7 +27,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3002;
   await app.listen(port);
-  
+
   console.log(`🎵 LaMusic Micro Importer rodando na porta ${port}`);
 }
 
