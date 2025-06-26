@@ -12,7 +12,7 @@ export class SupabaseService implements OnModuleInit {
   private readonly logger = new Logger(SupabaseService.name);
   private supabaseClient: SupabaseClient<Database>;
 
-  constructor(private readonly configService: ConfigService) { }
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Inicializa o cliente Supabase durante a inicialização do módulo
@@ -44,7 +44,7 @@ export class SupabaseService implements OnModuleInit {
       });
 
       this.logger.log('✅ Cliente Supabase inicializado com sucesso');
-
+      
       // Teste de conectividade
       await this.testConnection();
     } catch (error) {
@@ -93,7 +93,7 @@ export class SupabaseService implements OnModuleInit {
    */
   async transaction<T>(callback: (client: SupabaseClient<Database>) => Promise<T>): Promise<T> {
     const client = this.getClient();
-
+    
     try {
       // Nota: Supabase não suporta transações explícitas via JS client
       // Para transações complexas, utilizaremos stored procedures ou RPC

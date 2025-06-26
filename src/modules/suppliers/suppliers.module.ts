@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
-import { SuppliersService } from './suppliers.service';
-import { SuppliersController } from './suppliers.controller';
 
 /**
  * Módulo de Fornecedores
- * Gerencia fornecedores com foco na importação de NFEs
+ * Responsável pelo gerenciamento de fornecedores extraídos das NFEs
  */
 @Module({
   imports: [],
-  controllers: [SuppliersController],
-  providers: [SuppliersService],
-  exports: [SuppliersService], // Exporta para uso no módulo de importação
+  controllers: [],
+  providers: [],
+  exports: [],
 })
-export class SuppliersModule { }
+export class SuppliersModule {}

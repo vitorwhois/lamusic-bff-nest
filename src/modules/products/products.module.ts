@@ -1,20 +1,13 @@
 import { Module } from '@nestjs/common';
-import { ProductsService } from './services/products.service';
-import { ProductsController } from './controllers/products.controller';
-import { AiModule } from '@/modules/ai';
-import { CategoriesModule } from '@/modules/categories';
 
 /**
  * Módulo de Produtos
- * Gerencia produtos com integração IA e categorias
+ * Responsável pelo gerenciamento do catálogo de produtos
  */
 @Module({
-  imports: [
-    AiModule,
-    CategoriesModule,
-  ],
-  controllers: [ProductsController],
-  providers: [ProductsService],
-  exports: [ProductsService],
+  imports: [],
+  controllers: [],
+  providers: [],
+  exports: [],
 })
-export class ProductsModule { }
+export class ProductsModule {}

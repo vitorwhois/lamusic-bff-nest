@@ -8,7 +8,7 @@ import { SupabaseService } from '../../modules/database/supabase.service';
 
 @Injectable()
 export class ExampleUsageService {
-  constructor(private readonly supabaseService: SupabaseService) { }
+  constructor(private readonly supabaseService: SupabaseService) {}
 
   /**
    * Exemplo: Buscar todos os usuários

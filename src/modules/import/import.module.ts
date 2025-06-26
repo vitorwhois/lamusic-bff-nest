@@ -10,4 +10,4 @@ import { Module } from '@nestjs/common';
   providers: [],
   exports: [],
 })
-export class ImportModule { }
+export class ImportModule {}

@@ -8,7 +8,7 @@ import { AiService } from '../../modules/ai/ai.service';
 
 @Injectable()
 export class ExampleAiUsageService {
-  constructor(private readonly aiService: AiService) { }
+  constructor(private readonly aiService: AiService) {}
 
   /**
    * Exemplo: Processar uma NFE completa

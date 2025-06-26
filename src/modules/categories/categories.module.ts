@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
-import { CategoriesService } from './categories.service';
-import { CategoriesController } from './categories.controller';
 
 /**
  * Módulo de Categorias
- * Gerencia hierarquia de categorias de produtos musicais
+ * Responsável pelo gerenciamento e categorização automática de produtos
  */
 @Module({
   imports: [],
-  controllers: [CategoriesController],
-  providers: [CategoriesService],
-  exports: [CategoriesService], // Exporta para uso em outros módulos (Products, Import)
+  controllers: [],
+  providers: [],
+  exports: [],
 })
-export class CategoriesModule { }
+export class CategoriesModule {}
