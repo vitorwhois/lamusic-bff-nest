@@ -1,0 +1,228 @@
+erDiagram
+users {
+  UUID id PK
+  TEXT name
+  TEXT email
+  TEXT password
+  TEXT phone
+  TEXT role
+  BOOLEAN email_verified
+  TIMESTAMPTZ created_at
+  TIMESTAMPTZ updated_at
+  TIMESTAMPTZ deleted_at
+}
+
+
+addresses {
+  UUID id PK
+  UUID user_id FK
+  TEXT type
+  TEXT label
+  TEXT recipient_name
+  TEXT street
+  TEXT number
+  TEXT complement
+  TEXT neighborhood
+  TEXT city
+  TEXT state
+  TEXT zip_code
+  TEXT country
+  BOOLEAN is_default
+  TIMESTAMPTZ created_at
+  TIMESTAMPTZ updated_at
+}
+
+
+categories {
+  UUID id PK
+  TEXT name
+  TEXT slug
+  TEXT description
+  UUID parent_id FK
+  INTEGER sort_order
+  BOOLEAN is_active
+  TIMESTAMPTZ created_at
+  TIMESTAMPTZ updated_at
+  TIMESTAMPTZ deleted_at
+}
+
+
+products {
+  UUID id PK
+  TEXT name
+  TEXT slug
+  TEXT description
+  TEXT short_description
+  DECIMAL price
+  DECIMAL compare_price
+  DECIMAL cost_price
+  TEXT sku
+  TEXT barcode
+  INTEGER stock_quantity
+  INTEGER min_stock_alert
+  DECIMAL weight
+  DECIMAL dimensions_length
+  DECIMAL dimensions_width
+  DECIMAL dimensions_height
+  TEXT status
+  BOOLEAN featured
+  TEXT meta_title
+  TEXT meta_description
+  TIMESTAMPTZ created_at
+  TIMESTAMPTZ updated_at
+  TIMESTAMPTZ deleted_at
+}
+
+
+product_categories {
+  UUID id PK
+  UUID product_id FK
+  UUID category_id FK
+}
+
+
+product_images {
+  UUID id PK
+  UUID product_id FK
+  TEXT url
+  TEXT alt_text
+  INTEGER sort_order
+  BOOLEAN is_primary
+  TIMESTAMPTZ created_at
+}
+
+
+carts {
+  UUID id PK
+  UUID user_id FK
+  TEXT status
+  TIMESTAMPTZ created_at
+  TIMESTAMPTZ updated_at
+}
+
+
+cart_items {
+  UUID id PK
+  UUID cart_id FK
+  UUID product_id FK
+  INTEGER quantity
+  DECIMAL price
+  TIMESTAMPTZ created_at
+  TIMESTAMPTZ updated_at
+}
+
+
+coupons {
+  UUID id PK
+  TEXT code
+  TEXT type
+  DECIMAL value
+  DECIMAL min_order_amount
+  DECIMAL max_discount_amount
+  INTEGER usage_limit
+  INTEGER used_count
+  BOOLEAN is_active
+  TIMESTAMPTZ valid_from
+  TIMESTAMPTZ valid_until
+  TIMESTAMPTZ created_at
+  TIMESTAMPTZ updated_at
+}
+
+
+order_addresses {
+  UUID id PK
+  TEXT recipient_name
+  TEXT street
+  TEXT number
+  TEXT complement
+  TEXT neighborhood
+  TEXT city
+  TEXT state
+  TEXT zip_code
+  TEXT country
+  TIMESTAMPTZ created_at
+}
+
+
+orders {
+  UUID id PK
+  UUID user_id FK
+  TEXT order_number
+  TEXT status
+  DECIMAL subtotal
+  DECIMAL shipping_cost
+  DECIMAL tax_amount
+  DECIMAL discount_amount
+  DECIMAL total_amount
+  TEXT currency
+  UUID shipping_address_snapshot_id FK
+  UUID billing_address_snapshot_id FK
+  UUID coupon_id FK
+  TEXT notes
+  TIMESTAMPTZ created_at
+  TIMESTAMPTZ updated_at
+}
+
+
+order_items {
+  UUID id PK
+  UUID order_id FK
+  UUID product_id FK
+  INTEGER quantity
+  DECIMAL unit_price
+  DECIMAL total_price
+  TEXT product_name_snapshot
+  TEXT product_sku_snapshot
+  TIMESTAMPTZ created_at
+}
+
+
+payments {
+  UUID id PK
+  UUID order_id FK
+  DECIMAL amount
+  TEXT method
+  TEXT status
+  TEXT transaction_id
+  JSONB gateway_response
+  TEXT error_code
+  TEXT error_message
+  INTEGER attempt_number
+  TIMESTAMPTZ processed_at
+  TIMESTAMPTZ created_at
+}
+
+
+product_logs {
+  UUID id PK
+  UUID product_id FK
+  TEXT action
+  JSONB old_values
+  JSONB new_values
+  UUID responsible_user_id FK
+  TIMESTAMPTZ created_at
+}
+
+
+users ||--o{ addresses : has
+users ||--o{ carts : has
+users ||--o{ orders : has
+users ||--o{ product_logs : responsible_for
+
+
+carts ||--|{ cart_items : contains
+products ||--o{ cart_items : in
+products ||--o{ product_categories : belongs_to
+categories ||--o{ product_categories : contains
+products ||--o{ product_images : has
+
+
+orders ||--|{ order_items : contains
+orders ||--o| order_addresses : shipping_address
+orders ||--o| order_addresses : billing_address
+orders ||--o| coupons : uses
+orders ||--o{ payments : has
+
+
+products ||--o{ order_items : ordered_in
+```
