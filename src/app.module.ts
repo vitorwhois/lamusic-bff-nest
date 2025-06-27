@@ -9,6 +9,7 @@ import { ImportModule } from './modules/import/import.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { OrdersModule } from './modules/orders/orders.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { UsersModule } from './modules/users/users.module';
 
     // Módulos de processo de negócio
     ImportModule,
+    OrdersModule,
   ],
   controllers: [],
   providers: [],

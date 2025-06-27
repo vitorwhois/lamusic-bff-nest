@@ -311,3 +311,115 @@ BEGIN
         (p_page - 1) * p_limit;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- Função RPC para relatório completo de pedidos com performance otimizada
+CREATE OR REPLACE FUNCTION get_orders_report(
+    p_page INT DEFAULT 1,
+    p_limit INT DEFAULT 20,
+    p_start_date TIMESTAMPTZ DEFAULT NULL,
+    p_end_date TIMESTAMPTZ DEFAULT NULL,
+    p_status TEXT DEFAULT NULL,
+    p_search_term TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    id UUID,
+    order_number TEXT,
+    status TEXT,
+    customer_name TEXT,
+    customer_email TEXT,
+    items_count BIGINT,
+    total_amount DECIMAL,
+    shipping_city TEXT,
+    shipping_state TEXT,
+    has_coupon BOOLEAN,
+    coupon_code TEXT,
+    has_inactive_products BOOLEAN,
+    has_payment_pending BOOLEAN,
+    approximate_margin DECIMAL,
+    created_at TIMESTAMPTZ,
+    total_count BIGINT,
+    total_orders BIGINT,
+    total_sales DECIMAL,
+    total_margin DECIMAL
+)
+AS $$
+BEGIN
+    RETURN QUERY
+    WITH filtered_orders AS (
+        SELECT o.id
+        FROM public.orders o
+        LEFT JOIN public.users u ON o.user_id = u.id
+        WHERE (p_start_date IS NULL OR o.created_at >= p_start_date)
+          AND (p_end_date IS NULL OR o.created_at <= p_end_date)
+          AND (p_status IS NULL OR o.status = p_status)
+          AND (p_search_term IS NULL OR 
+               o.order_number ILIKE '%' || p_search_term || '%' OR
+               u.name ILIKE '%' || p_search_term || '%' OR
+               u.email ILIKE '%' || p_search_term || '%')
+    ),
+    order_metrics AS (
+        SELECT 
+            o.id,
+            COUNT(oi.id) as items_count,
+            COALESCE(SUM((oi.unit_price - COALESCE(p.cost_price, 0)) * oi.quantity), 0) as approximate_margin,
+            BOOL_OR(p.deleted_at IS NOT NULL) as has_inactive_products
+        FROM public.orders o
+        JOIN filtered_orders fo ON o.id = fo.id
+        LEFT JOIN public.order_items oi ON o.id = oi.order_id
+        LEFT JOIN public.products p ON oi.product_id = p.id
+        GROUP BY o.id
+    ),
+    payment_status AS (
+        SELECT 
+            o.id,
+            BOOL_OR(COALESCE(py.status != 'COMPLETED', true)) as has_payment_pending
+        FROM public.orders o
+        JOIN filtered_orders fo ON o.id = fo.id
+        LEFT JOIN public.payments py ON o.id = py.order_id
+        GROUP BY o.id
+    ),
+    summary_metrics AS (
+        SELECT 
+            COUNT(*)::BIGINT as total_orders_summary,
+            COALESCE(SUM(o.total_amount), 0)::DECIMAL as total_sales_summary,
+            COALESCE(SUM(om.approximate_margin), 0)::DECIMAL as total_margin_summary
+        FROM public.orders o
+        JOIN filtered_orders fo ON o.id = fo.id
+        LEFT JOIN order_metrics om ON o.id = om.id
+    ),
+    total_count AS (
+        SELECT COUNT(*)::BIGINT as total_filtered FROM filtered_orders
+    )
+    SELECT
+        o.id::UUID,
+        o.order_number::TEXT,
+        o.status::TEXT,
+        u.name::TEXT as customer_name,
+        u.email::TEXT as customer_email,
+        om.items_count::BIGINT,
+        o.total_amount::DECIMAL,
+        oa.city::TEXT as shipping_city,
+        oa.state::TEXT as shipping_state,
+        (o.coupon_id IS NOT NULL)::BOOLEAN as has_coupon,
+        c.code::TEXT as coupon_code,
+        COALESCE(om.has_inactive_products, false)::BOOLEAN,
+        COALESCE(ps.has_payment_pending, false)::BOOLEAN,
+        COALESCE(om.approximate_margin, 0)::DECIMAL,
+        o.created_at::TIMESTAMPTZ,
+        (SELECT total_filtered FROM total_count)::BIGINT as total_count,
+        (SELECT total_orders_summary FROM summary_metrics)::BIGINT as total_orders,
+        (SELECT total_sales_summary FROM summary_metrics)::DECIMAL as total_sales,
+        (SELECT total_margin_summary FROM summary_metrics)::DECIMAL as total_margin
+    FROM public.orders o
+    JOIN filtered_orders fo ON o.id = fo.id
+    LEFT JOIN public.users u ON o.user_id = u.id
+    LEFT JOIN public.order_addresses oa ON o.shipping_address_snapshot_id = oa.id
+    LEFT JOIN public.coupons c ON o.coupon_id = c.id
+    LEFT JOIN order_metrics om ON o.id = om.id
+    LEFT JOIN payment_status ps ON o.id = ps.id
+    ORDER BY o.created_at DESC
+    LIMIT p_limit
+    OFFSET (p_page - 1) * p_limit;
+END;
+$$ LANGUAGE plpgsql;

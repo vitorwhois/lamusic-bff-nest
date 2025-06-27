@@ -311,5 +311,76 @@ Respostas
     "tokensUsed": 50
 }
 
+6. Módulo de Pedidos (/orders)
+Endpoints para gerenciamento e análise de pedidos.
 
+Autenticação: Todos os endpoints deste módulo requerem Bearer Token.
+
+### 6.1 Relatório de Pedidos
+Endpoint: `GET /orders/report`
+Descrição: Retorna um relatório completo de pedidos com métricas agregadas e dados para análise administrativa. Inclui filtros por período, status e busca.
+
+**Query Parameters**
+| Parâmetro | Tipo | Obrigatório | Descrição |
+| :--- | :--- | :--- | :--- |
+| `startDate` | string (ISO8601) | Não | Data inicial do período (ex: 2025-01-01T00:00:00Z) |
+| `endDate` | string (ISO8601) | Não | Data final do período (ex: 2025-12-31T23:59:59Z) |
+| `status` | string | Não | Filtrar por status específico (PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED) |
+| `search` | string | Não | Buscar por número do pedido, nome ou email do cliente |
+| `page` | number | Não | Número da página (default: 1) |
+| `limit` | number | Não | Itens por página (default: 20) |
+
+**Exemplo de Requisição (Postman)**
+Método: `GET`
+URL: `{{baseURL}}/orders/report?startDate=2025-01-01T00:00:00Z&endDate=2025-12-31T23:59:59Z&page=1&limit=20`
+Authorization: `Bearer <token>`
+
+**Estrutura da Resposta**
+200 OK (Sucesso): Retorna dados paginados com métricas agregadas.
+```json
+{
+  "orders": [
+    {
+      "id": "uuid-do-pedido",
+      "orderNumber": "ORD-2025-001",
+      "status": "DELIVERED",
+      "customerName": "João Silva",
+      "customerEmail": "joao@email.com",
+      "itemsCount": 3,
+      "totalAmount": 1299.90,
+      "shippingCity": "São Paulo",
+      "shippingState": "SP",
+      "hasCoupon": true,
+      "couponCode": "DESCONTO10",
+      "hasInactiveProducts": false,
+      "hasPaymentPending": false,
+      "approximateMargin": 389.97,
+      "createdAt": "2025-06-27T10:00:00.000Z",
+      "totalCount": 150
+    }
+  ],
+  "summary": {
+    "totalOrders": 150,
+    "totalSales": 25890.50,
+    "averageOrderValue": 172.60,
+    "totalMargin": 7767.15
+  }
+}
+```
+
+### 6.2 Listar Pedidos (CRUD Básico)
+Endpoint: `GET /orders`
+Descrição: Lista pedidos com paginação simples.
+
+### 6.3 Buscar Pedido por ID
+Endpoint: `GET /orders/:id`
+Descrição: Retorna detalhes completos de um pedido específico.
+
+### 6.4 Atualizar Pedido
+Endpoint: `PATCH /orders/:id`
+Descrição: Atualiza dados de um pedido (principalmente status).
+
+### 6.5 Criar Pedido
+Endpoint: `POST /orders`
+Descrição: Cria um novo pedido no sistema.
 
