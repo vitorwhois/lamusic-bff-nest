@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc versao="4.00" xmlns="http://www.portalfiscal.inf.br/nfe">
+    <NFe>
+        <infNFe Id="NFe35240112345678000199550010000000031345678901">
+            <ide>
+                <cUF>35</cUF>
+                <cNF>34567890</cNF>
+                <natOp>Reposição de estoque</natOp>
+                <mod>55</mod>
+                <serie>1</serie>
+                <nNF>3</nNF>
+                <dhEmi>2024-06-27T16:45:00-03:00</dhEmi>
+                <tpNF>1</tpNF>
+                <idDest>2</idDest>
+                <cMunFG>3550308</cMunFG>
+                <tpImp>1</tpImp>
+                <tpEmis>1</tpEmis>
+                <cDV>7</cDV>
+                <tpAmb>2</tpAmb>
+                <finNFe>1</finNFe>
+                <indFinal>1</indFinal>
+                <indPres>1</indPres>
+            </ide>
+            <emit>
+                <CNPJ>12345678000199</CNPJ>
+                <xNome>Harmony Instrumentos Musicais LTDA</xNome>
+                <xFant>Harmony Music</xFant>
+                <enderEmit>
+                    <xLgr>Rua das Harmonias</xLgr>
+                    <nro>123</nro>
+                    <xBairro>Centro Musical</xBairro>
+                    <cMun>3550308</cMun>
+                    <xMun>São Paulo</xMun>
+                    <UF>SP</UF>
+                    <CEP>01234567</CEP>
+                </enderEmit>
+                <IE>123456789012</IE>
+                <CRT>3</CRT>
+            </emit>
+            <dest>
+                <CNPJ>98765432000111</CNPJ>
+                <xNome>LaMusic Distribuidora</xNome>
+            </dest>
+            <det nItem="1">
+                <prod>
+                    <cProd>GTR-ACS-001</cProd>
+                    <cEAN/>
+                    <xProd>Violão Clássico Nylon Harmony HC-100</xProd>
+                    <NCM>92051000</NCM>
+                    <CFOP>5102</CFOP>
+                    <uCom>UN</uCom>
+                    <qCom>8.0000</qCom>
+                    <vUnCom>450.0000</vUnCom>
+                    <vProd>3600.00</vProd>
+                    <cEANTrib/>
+                    <uTrib>UN</uTrib>
+                    <qTrib>8.0000</qTrib>
+                    <vUnTrib>450.0000</vUnTrib>
+                </prod>
+                <imposto>
+                    <ICMS>
+                        <ICMS00>
+                            <orig>0</orig>
+                            <CST>00</CST>
+                            <modBC>0</modBC>
+                            <vBC>3600.00</vBC>
+                            <pICMS>18.00</pICMS>
+                            <vICMS>648.00</vICMS>
+                        </ICMS00>
+                    </ICMS>
+                </imposto>
+            </det>
+            <det nItem="2">
+                <prod>
+                    <cProd>GTR-ELE-002</cProd>
+                    <cEAN/>
+                    <xProd>Guitarra Elétrica Stratocaster Harmony HE-200</xProd>
+                    <NCM>92051000</NCM>
+                    <CFOP>5102</CFOP>
+                    <uCom>UN</uCom>
+                    <qCom>6.0000</qCom>
+                    <vUnCom>850.0000</vUnCom>
+                    <vProd>5100.00</vProd>
+                    <cEANTrib/>
+                    <uTrib>UN</uTrib>
+                    <qTrib>6.0000</qTrib>
+                    <vUnTrib>850.0000</vUnTrib>
+                </prod>
+                <imposto>
+                    <ICMS>
+                        <ICMS00>
+                            <orig>0</orig>
+                            <CST>00</CST>
+                            <modBC>0</modBC>
+                            <vBC>5100.00</vBC>
+                            <pICMS>18.00</pICMS>
+                            <vICMS>918.00</vICMS>
+                        </ICMS00>
+                    </ICMS>
+                </imposto>
+            </det>
+            <det nItem="3">
+                <prod>
+                    <cProd>SAX-ALT-004</cProd>
+                    <cEAN/>
+                    <xProd>Saxofone Alto Melody MA-300 Dourado</xProd>
+                    <NCM>92051000</NCM>
+                    <CFOP>5102</CFOP>
+                    <uCom>UN</uCom>
+                    <qCom>1.0000</qCom>
+                    <vUnCom>1850.0000</vUnCom>
+                    <vProd>1850.00</vProd>
+                    <cEANTrib/>
+                    <uTrib>UN</uTrib>
+                    <qTrib>1.0000</qTrib>
+                    <vUnTrib>1850.0000</vUnTrib>
+                </prod>
+                <imposto>
+                    <ICMS>
+                        <ICMS00>
+                            <orig>0</orig>
+                            <CST>00</CST>
+                            <modBC>0</modBC>
+                            <vBC>1850.00</vBC>
+                            <pICMS>18.00</pICMS>
+                            <vICMS>333.00</vICMS>
+                        </ICMS00>
+                    </ICMS>
+                </imposto>
+            </det>
+            <total>
+                <ICMSTot>
+                    <vBC>10550.00</vBC>
+                    <vICMS>1899.00</vICMS>
+                    <vICMSDeson>0.00</vICMSDeson>
+                    <vFCP>0.00</vFCP>
+                    <vBCST>0.00</vBCST>
+                    <vST>0.00</vST>
+                    <vFCPST>0.00</vFCPST>
+                    <vFCPSTRet>0.00</vFCPSTRet>
+                    <vProd>10550.00</vProd>
+                    <vFrete>0.00</vFrete>
+                    <vSeg>0.00</vSeg>
+                    <vDesc>0.00</vDesc>
+                    <vII>0.00</vII>
+                    <vIPI>0.00</vIPI>
+                    <vIPIDevol>0.00</vIPIDevol>
+                    <vPIS>0.00</vPIS>
+                    <vCOFINS>0.00</vCOFINS>
+                    <vOutro>0.00</vOutro>
+                    <vNF>10550.00</vNF>
+                </ICMSTot>
+            </total>
+        </infNFe>
+    </NFe>
+</nfeProc>

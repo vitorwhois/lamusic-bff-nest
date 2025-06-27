@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Body,
+    Patch,
+    Param,
+    Delete,
+    UseGuards,
+    Query,
+    ParseIntPipe,
+    DefaultValuePipe,
+    ParseUUIDPipe,
+} from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -12,13 +25,28 @@ export class ProductsController {
     constructor(private readonly productsService: ProductsService) { }
 
     @Post()
+    @UseGuards(AuthGuard('jwt'))
     create(@Body() createProductDto: CreateProductDto, @GetUser('userId') userId: string) {
         return this.productsService.create(createProductDto, userId);
     }
 
     @Get()
-    findAll() {
-        return this.productsService.findAll();
+    findAll(
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+        @Query('search') search?: string,
+    ) {
+        return this.productsService.findAll({ page, limit, search });
+    }
+
+    @Get('with-sales')
+    @UseGuards(AuthGuard('jwt'))
+    findAllWithSales(
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+        @Query('search') search?: string,
+    ) {
+        return this.productsService.findAllWithSales({ page, limit, search });
     }
 
     @Get(':id')

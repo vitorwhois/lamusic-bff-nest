@@ -8,7 +8,7 @@ import { ValidationPipe } from '@nestjs/common';
  */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   // Configuração de validação global
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
@@ -20,6 +20,8 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   // Prefixo global para todas as rotas da API
@@ -27,7 +29,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3002;
   await app.listen(port);
-  
+
   console.log(`🎵 LaMusic Micro Importer rodando na porta ${port}`);
 }
 

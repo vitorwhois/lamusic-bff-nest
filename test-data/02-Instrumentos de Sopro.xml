@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc versao="4.00" xmlns="http://www.portalfiscal.inf.br/nfe">
+    <NFe>
+        <infNFe Id="NFe35240198765432000155550010000000021234567890">
+            <ide>
+                <cUF>35</cUF>
+                <cNF>23456789</cNF>
+                <natOp>Venda de instrumentos de sopro</natOp>
+                <mod>55</mod>
+                <serie>1</serie>
+                <nNF>2</nNF>
+                <dhEmi>2024-06-27T14:15:00-03:00</dhEmi>
+                <tpNF>1</tpNF>
+                <idDest>2</idDest>
+                <cMunFG>3550308</cMunFG>
+                <tpImp>1</tpImp>
+                <tpEmis>1</tpEmis>
+                <cDV>8</cDV>
+                <tpAmb>2</tpAmb>
+                <finNFe>1</finNFe>
+                <indFinal>1</indFinal>
+                <indPres>1</indPres>
+            </ide>
+            <emit>
+                <CNPJ>98765432000155</CNPJ>
+                <xNome>Melody Wind Instruments LTDA</xNome>
+                <xFant>Melody Wind</xFant>
+                <enderEmit>
+                    <xLgr>Avenida dos Ventos</xLgr>
+                    <nro>456</nro>
+                    <xBairro>Vila Musical</xBairro>
+                    <cMun>3550308</cMun>
+                    <xMun>São Paulo</xMun>
+                    <UF>SP</UF>
+                    <CEP>05678901</CEP>
+                </enderEmit>
+                <IE>987654321098</IE>
+                <CRT>3</CRT>
+            </emit>
+            <dest>
+                <CNPJ>98765432000111</CNPJ>
+                <xNome>LaMusic Distribuidora</xNome>
+            </dest>
+            <det nItem="1">
+                <prod>
+                    <cProd>SAX-ALT-004</cProd>
+                    <cEAN/>
+                    <xProd>Saxofone Alto Melody MA-300 Dourado</xProd>
+                    <NCM>92051000</NCM>
+                    <CFOP>5102</CFOP>
+                    <uCom>UN</uCom>
+                    <qCom>2.0000</qCom>
+                    <vUnCom>1850.0000</vUnCom>
+                    <vProd>3700.00</vProd>
+                    <cEANTrib/>
+                    <uTrib>UN</uTrib>
+                    <qTrib>2.0000</qTrib>
+                    <vUnTrib>1850.0000</vUnTrib>
+                </prod>
+                <imposto>
+                    <ICMS>
+                        <ICMS00>
+                            <orig>0</orig>
+                            <CST>00</CST>
+                            <modBC>0</modBC>
+                            <vBC>3700.00</vBC>
+                            <pICMS>18.00</pICMS>
+                            <vICMS>666.00</vICMS>
+                        </ICMS00>
+                    </ICMS>
+                </imposto>
+            </det>
+            <det nItem="2">
+                <prod>
+                    <cProd>FLT-TRA-005</cProd>
+                    <cEAN/>
+                    <xProd>Flauta Transversal Melody MF-250 Prateada</xProd>
+                    <NCM>92051000</NCM>
+                    <CFOP>5102</CFOP>
+                    <uCom>UN</uCom>
+                    <qCom>4.0000</qCom>
+                    <vUnCom>680.0000</vUnCom>
+                    <vProd>2720.00</vProd>
+                    <cEANTrib/>
+                    <uTrib>UN</uTrib>
+                    <qTrib>4.0000</qTrib>
+                    <vUnTrib>680.0000</vUnTrib>
+                </prod>
+                <imposto>
+                    <ICMS>
+                        <ICMS00>
+                            <orig>0</orig>
+                            <CST>00</CST>
+                            <modBC>0</modBC>
+                            <vBC>2720.00</vBC>
+                            <pICMS>18.00</pICMS>
+                            <vICMS>489.60</vICMS>
+                        </ICMS00>
+                    </ICMS>
+                </imposto>
+            </det>
+            <det nItem="3">
+                <prod>
+                    <cProd>TRP-SIB-006</cProd>
+                    <cEAN/>
+                    <xProd>Trompete Sib Melody MT-400 Laqueado</xProd>
+                    <NCM>92051000</NCM>
+                    <CFOP>5102</CFOP>
+                    <uCom>UN</uCom>
+                    <qCom>1.0000</qCom>
+                    <vUnCom>1200.0000</vUnCom>
+                    <vProd>1200.00</vProd>
+                    <cEANTrib/>
+                    <uTrib>UN</uTrib>
+                    <qTrib>1.0000</qTrib>
+                    <vUnTrib>1200.0000</vUnTrib>
+                </prod>
+                <imposto>
+                    <ICMS>
+                        <ICMS00>
+                            <orig>0</orig>
+                            <CST>00</CST>
+                            <modBC>0</modBC>
+                            <vBC>1200.00</vBC>
+                            <pICMS>18.00</pICMS>
+                            <vICMS>216.00</vICMS>
+                        </ICMS00>
+                    </ICMS>
+                </imposto>
+            </det>
+            <total>
+                <ICMSTot>
+                    <vBC>7620.00</vBC>
+                    <vICMS>1371.60</vICMS>
+                    <vICMSDeson>0.00</vICMSDeson>
+                    <vFCP>0.00</vFCP>
+                    <vBCST>0.00</vBCST>
+                    <vST>0.00</vST>
+                    <vFCPST>0.00</vFCPST>
+                    <vFCPSTRet>0.00</vFCPSTRet>
+                    <vProd>7620.00</vProd>
+                    <vFrete>0.00</vFrete>
+                    <vSeg>0.00</vSeg>
+                    <vDesc>0.00</vDesc>
+                    <vII>0.00</vII>
+                    <vIPI>0.00</vIPI>
+                    <vIPIDevol>0.00</vIPIDevol>
+                    <vPIS>0.00</vPIS>
+                    <vCOFINS>0.00</vCOFINS>
+                    <vOutro>0.00</vOutro>
+                    <vNF>7620.00</vNF>
+                </ICMSTot>
+            </total>
+        </infNFe>
+    </NFe>
+</nfeProc>

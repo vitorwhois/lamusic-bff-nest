@@ -5,7 +5,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 export interface IProductsRepository {
     create(productDto: CreateProductDto, slug: string, client?: SupabaseClient): Promise<Product>;
-    findAll(): Promise<Product[]>;
+    findAll(options: { page: number; limit: number }): Promise<{ data: Product[]; total: number; page: number; limit: number }>;
+    findAllWithSales(options: { page: number; limit: number }): Promise<any>;
     findById(id: string, client?: SupabaseClient): Promise<Product | null>;
     findBySku(sku: string, client?: SupabaseClient): Promise<Product | null>;
     update(id: string, productDto: UpdateProductDto, client?: SupabaseClient): Promise<Product>;

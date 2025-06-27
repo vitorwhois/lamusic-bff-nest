@@ -48,24 +48,29 @@ Respostas
 Endpoints para o gerenciamento completo do catálogo de produtos.
 
 Autenticação: Todos os endpoints deste módulo requerem Bearer Token.
-2.1 Criar um Produto
-Endpoint: POST /products
-Descrição: Cria um novo produto no catálogo.
-Request Body (CreateProductDto)
-Campo	Tipo	Obrigatório	Descrição
-name	string	Sim	Nome do produto.
-description	string	Não	Descrição detalhada do produto.
-price	number	Sim	Preço de venda do produto.
-stockQuantity	number	Sim	Quantidade inicial em estoque.
-sku	string	Não	Código de referência único (SKU).
-featured	boolean	Não	Indica se o produto está em destaque.
-status	string	Não	Status do produto (ACTIVE, INACTIVE).
-categoryIds	string[]	Não	Array de UUIDs das categorias associadas.
-Exemplo de Requisição (Postman)
-Método: POST
-URL: {{baseURL}}/products
-Authorization: Bearer <token>
+
+### 2.1 Criar um Produto
+Endpoint: `POST /products`
+Descrição: Cria um novo produto no catálogo. Requer permissão de administrador.
+
+**Request Body (`CreateProductDto`)**
+| Campo | Tipo | Obrigatório | Descrição |
+| :--- | :--- | :--- | :--- |
+| `name` | string | Sim | Nome do produto. |
+| `price` | number | Sim | Preço de venda do produto. |
+| `stockQuantity` | number | Sim | Quantidade inicial em estoque. |
+| `description` | string | Não | Descrição detalhada do produto. |
+| `sku` | string | Não | Código de referência único (SKU). Se fornecido, deve ser único. |
+| `featured` | boolean | Não | Indica se o produto está em destaque (default: `false`). |
+| `status` | string | Não | Status do produto. Aceita 'ACTIVE' ou 'INACTIVE' (default: 'ACTIVE'). |
+| `categoryIds` | string[] | Não | Array de UUIDs das categorias a serem associadas. |
+
+**Exemplo de Requisição (Postman)**
+Método: `POST`
+URL: `{{baseURL}}/products`
+Authorization: `Bearer <token>`
 Body (raw, JSON):
+```json
 {
   "name": "Microfone Condensador Pro-Sound X1",
   "description": "Microfone de estúdio profissional para gravações de alta qualidade.",
@@ -73,32 +78,99 @@ Body (raw, JSON):
   "stockQuantity": 25,
   "sku": "MIC-PS-X1-COND",
   "featured": true,
-  "status": "ACTIVE"
+  "status": "ACTIVE",
+  "categoryIds": ["uuid-da-categoria-de-microfones"]
 }
+```
+
+**Respostas**
+- **201 Created (Sucesso):** Retorna o objeto do produto recém-criado.
+- **400 Bad Request (Falha de Validação):** Retornado se algum campo obrigatório estiver faltando ou se os tipos de dados estiverem incorretos.
+- **409 Conflict (Conflito):** Retornado se o `sku` enviado já existir no banco de dados.
+
+
+### 2.2 Listar Todos os Produtos
+Endpoint: `GET /products`
+Descrição: Retorna uma lista paginada de todos os produtos. Este endpoint segue o **padrão de objeto paginado**.
+Query Parameters:
+- `page` (number, opcional, default: 1): O número da página a ser retornada.
+- `limit` (number, opcional, default: 10): O número de itens por página.
+- `search` (string, opcional): Termo para buscar no nome ou SKU do produto (case-insensitive).
+
+Exemplo de Requisição (Postman)
+Método: GET
+URL: `{{baseURL}}/products?page=1&limit=10&search=guitarra`
+Authorization: Bearer <token>
+
+**Estrutura da Resposta (Objeto Paginado)**
+200 OK (Sucesso): Retorna um objeto contendo os dados e os metadados de paginação.
+```json
+{
+  "data": [
+    {
+      "id": "uuid-do-produto",
+      "name": "Guitarra Elétrica",
+      "sku": "GTR-001",
+      "price": 1500.00
+      // ... outros campos do produto
+    }
+  ],
+  "total": 25,
+  "page": 1,
+  "limit": 10
+}
+```
+
+### 2.3 Listar Produtos com Estatísticas de Vendas
+Endpoint: `GET /products/with-sales`
+Descrição: Retorna uma lista paginada de produtos com estatísticas de vendas. Devido à complexidade da consulta, este endpoint segue o **padrão de array plano**.
+Query Parameters:
+- `page` (number, opcional, default: 1): O número da página.
+- `limit` (number, opcional, default: 10): O número de itens por página.
+- `search` (string, opcional): Termo para buscar no nome ou SKU do produto (case-insensitive).
+
+Exemplo de Requisição (Postman)
+Método: GET
+URL: `{{baseURL}}/products/with-sales?search=harmony`
+Authorization: Bearer <token>
+
+**Estrutura da Resposta (Array Plano)**
+200 OK (Sucesso): Retorna um array de objetos, onde cada objeto é um produto enriquecido com dados de vendas e paginação.
+```json
+[
+  {
+    "id": "uuid-do-produto",
+    "name": "Guitarra Elétrica Stratocaster Harmony",
+    "sku": "GTR-ELE-002",
+    "price": "850.00",
+    "stock_quantity": 15,
+    "status": "ACTIVE",
+    "completed_orders_count": "25",
+    "pending_orders_count": "2",
+    "total_count": "3"
+  }
+]
+```
+
+**Nota sobre a Estrutura e o campo `total_count`**:
+- **Estrutura de Array Plano**: A resposta é um array direto para otimizar a performance da consulta complexa no banco de dados.
+- **`total_count`**: Este campo **não é a soma das vendas**. Ele representa o **número total de produtos que correspondem aos critérios de busca** e é usado para construir a paginação no frontend. Ele terá o mesmo valor para todos os itens retornados em uma única requisição.
+-- Débito técnico: responsabilidade do backend entregar a resposta pronta e no formato ideal
+
+### 2.4 Buscar Produto por ID
+Endpoint: `GET /products/:id`
+Descrição: Busca e retorna um único produto pelo seu UUID.
+
+Exemplo de Requisição (Postman)
+Método: GET
+URL: `{{baseURL}}/products/f82b7130-6a34-4c61-a1e3-74a789e033a7`
+Authorization: Bearer <token>
 
 Respostas
-201 Created (Sucesso): Retorna o objeto do produto recém-criado.
-409 Conflict (Falha): Retornado se o sku enviado já existir.
-2.2 Listar Todos os Produtos
-Endpoint: GET /products
-Descrição: Retorna uma lista de todos os produtos não deletados.
-Exemplo de Requisição (Postman)
-Método: GET
-URL: {{baseURL}}/products
-Authorization: Bearer <token>
-Respostas
-200 OK (Sucesso): Retorna um array de objetos de produto.
-2.3 Buscar Produto por ID
-Endpoint: GET /products/:id
-Descrição: Retorna um produto específico pelo seu UUID.
-Exemplo de Requisição (Postman)
-Método: GET
-URL: {{baseURL}}/products/f82b7130-6a34-4c61-a1e3-74a789e033a7
-Authorization: Bearer <token>
-Respostas
-200 OK (Sucesso): Retorna o objeto do produto encontrado.
-404 Not Found (Falha): Se nenhum produto com o ID fornecido for encontrado.
-2.4 Atualizar um Produto
+200 OK (Sucesso): Retorna o objeto do produto.
+404 Not Found (Falha): Se o produto não for encontrado.
+
+### 2.5 Atualizar um Produto
 Endpoint: PATCH /products/:id
 Descrição: Atualiza parcialmente os dados de um produto existente.
 Request Body (UpdateProductDto)
@@ -114,10 +186,11 @@ Body (raw, JSON):
   "featured": false
 }
 
-espostas
+Respostas
 200 OK (Sucesso): Retorna o objeto do produto completo após a atualização.
 404 Not Found (Falha): Se o produto a ser atualizado não for encontrado.
-2.5 Deletar um Produto (Soft Delete)
+
+### 2.6 Deletar um Produto (Soft Delete)
 Endpoint: DELETE /products/:id
 Descrição: Realiza um "soft delete" no produto, preenchendo o campo deleted_at.
 Exemplo de Requisição (Postman)
@@ -127,6 +200,9 @@ Authorization: Bearer <token>
 Respostas
 200 OK (Sucesso): Retorna uma confirmação.
 404 Not Found (Falha): Se o produto a ser deletado não for encontrado.
+
+
+
 3. Módulo de Importação (/import)
 Endpoints para processos de importação de dados.
 

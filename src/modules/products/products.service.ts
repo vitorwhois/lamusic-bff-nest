@@ -49,8 +49,12 @@ export class ProductsService {
         return product;
     }
 
-    findAll() {
-        return this.productsRepository.findAll();
+    async findAll(options: { page: number; limit: number, search?: string }) {
+        return this.productsRepository.findAll(options);
+    }
+
+    async findAllWithSales(options: { page: number; limit: number, search?: string }) {
+        return this.productsRepository.findAllWithSales(options);
     }
 
     async findOne(id: string, client?: SupabaseClient) {

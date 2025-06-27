@@ -35,15 +35,55 @@ export class SupabaseProductsRepository implements IProductsRepository {
         return this.mapToEntity(data);
     }
 
-    async findAll(): Promise<Product[]> {
+    async findAll(options: { page: number; limit: number, search?: string }): Promise<{ data: Product[]; total: number; page: number; limit: number; }> {
         const client = this.supabase.getClient();
-        const { data, error } = await client
+        const { page, limit, search } = options;
+        const offset = (page - 1) * limit;
+
+        let query = client
             .from(this.TABLE_NAME)
-            .select('*')
+            .select('*', { count: 'exact' })
             .is('deleted_at', null);
 
+        if (search) {
+            query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
+        }
+
+
+        const { data, error, count } = await query
+            .range(offset, offset + limit - 1)
+            .order('created_at', { ascending: false });
+
         if (error) throw new Error(`Could not retrieve products. ${error.message}`);
-        return data.map(this.mapToEntity);
+
+        return {
+            data: data.map(this.mapToEntity),
+            total: count,
+            page,
+            limit,
+        };
+    }
+
+    async findAllWithSales(options: { page: number; limit: number, search?: string }): Promise<any> {
+        const client = this.supabase.getClient();
+        const { page, limit, search } = options;
+
+        const rpcParams: { p_page: number; p_limit: number; p_search_term?: string } = {
+            p_page: page,
+            p_limit: limit,
+        };
+
+        if (search) {
+            rpcParams.p_search_term = search;
+        }
+
+        const { data, error } = await client.rpc('get_products_with_sales_stats', rpcParams);
+
+
+        if (error) {
+            throw new Error(`Could not retrieve products with sales stats. RPC Error: ${error.message}`);
+        }
+        return data;
     }
 
     async findById(id: string): Promise<Product | null> {
@@ -92,14 +132,13 @@ export class SupabaseProductsRepository implements IProductsRepository {
             dbPayload.meta_description = productDto.metaDescription;
             delete dbPayload.metaDescription;
         }
-        // ADICIONAR ESTA VERIFICAÇÃO
+
         if (productDto.stockQuantity) {
             dbPayload.stock_quantity = productDto.stockQuantity;
             delete dbPayload.stockQuantity;
         }
 
         dbPayload.updated_at = new Date();
-        console.log("dbPayload", dbPayload);
         const { data, error } = await dbClient
             .from(this.TABLE_NAME)
             .update(dbPayload)

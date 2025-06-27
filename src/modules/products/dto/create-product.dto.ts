@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, Min, IsBoolean, IsArray, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean, IsArray, IsUUID } from 'class-validator';
 
 export class CreateProductDto {
     @IsString()
@@ -10,13 +10,12 @@ export class CreateProductDto {
     description?: string;
 
     @IsNumber()
-    @Min(0)
+    @IsNotEmpty()
     price: number;
 
     @IsNumber()
-    @IsOptional()
-    @Min(0)
-    stockQuantity?: number = 0;
+    @IsNotEmpty()
+    stockQuantity: number;
 
     @IsString()
     @IsOptional()
@@ -24,11 +23,11 @@ export class CreateProductDto {
 
     @IsBoolean()
     @IsOptional()
-    featured?: boolean = false;
+    featured?: boolean;
 
     @IsString()
     @IsOptional()
-    status?: string = 'draft';
+    status?: 'ACTIVE' | 'INACTIVE';
 
     @IsArray()
     @IsUUID('4', { each: true })

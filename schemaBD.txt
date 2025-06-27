@@ -237,3 +237,77 @@ orders ||--o{ payments : has
 
 products ||--o{ order_items : ordered_in
 ```
+
+Ajustes adicionais:
+
+-- Execute este script no SQL Editor do seu projeto Supabase
+-- CORREÇÃO FINAL: Converte explicitamente todos os tipos para garantir a correspondência
+
+CREATE OR REPLACE FUNCTION get_products_with_sales_stats(
+    p_page INT, 
+    p_limit INT,
+    p_search_term TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    id UUID,
+    name TEXT,
+    sku TEXT,
+    price DECIMAL,
+    stock_quantity INT,
+    status TEXT,
+    completed_orders_count BIGINT,
+    pending_orders_count BIGINT,
+    total_count BIGINT
+)
+AS $$
+BEGIN
+    RETURN QUERY
+    WITH product_sales AS (
+        SELECT
+            oi.product_id,
+            SUM(CASE WHEN o.status IN ('COMPLETED', 'SHIPPED', 'DELIVERED') THEN 1 ELSE 0 END) AS completed_orders,
+            SUM(CASE WHEN o.status = 'PENDING' THEN 1 ELSE 0 END) AS pending_orders
+        FROM
+            public.order_items oi
+        JOIN
+            public.orders o ON oi.order_id = o.id
+        GROUP BY
+            oi.product_id
+    ),
+    filtered_products AS (
+        SELECT p.id
+        FROM public.products p
+        WHERE p.deleted_at IS NULL
+          AND (
+            p_search_term IS NULL OR 
+            p.name ILIKE '%' || p_search_term || '%' OR 
+            p.sku ILIKE '%' || p_search_term || '%'
+          )
+    ),
+    total AS (
+        SELECT count(*) as val FROM filtered_products
+    )
+    SELECT
+        p.id::UUID,
+        p.name::TEXT,
+        p.sku::TEXT,
+        p.price::DECIMAL,
+        p.stock_quantity::INT,
+        p.status::TEXT,
+        COALESCE(ps.completed_orders, 0)::BIGINT AS completed_orders_count,
+        COALESCE(ps.pending_orders, 0)::BIGINT AS pending_orders_count,
+        (SELECT val FROM total)::BIGINT as total_count
+    FROM
+        public.products p
+    JOIN
+        filtered_products fp ON p.id = fp.id
+    LEFT JOIN
+        product_sales ps ON p.id = ps.product_id
+    ORDER BY
+        p.created_at DESC
+    LIMIT
+        p_limit
+    OFFSET
+        (p_page - 1) * p_limit;
+END;
+$$ LANGUAGE plpgsql;
