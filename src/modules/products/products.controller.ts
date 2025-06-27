@@ -55,14 +55,16 @@ export class ProductsController {
     }
 
     @Patch(':id')
-    update(@Param('id', ParseUUIDPipe) id: string, @Body() updateProductDto: UpdateProductDto) {
-        const mockUserId = 'f82b7130-6a34-4c61-a1e3-74a789e033a7';
-        return this.productsService.update(id, updateProductDto, mockUserId);
+    update(@Param('id', ParseUUIDPipe) id: string,
+        @Body() updateProductDto: UpdateProductDto,
+        @GetUser('userId') userId: string) {
+
+        return this.productsService.update(id, updateProductDto, userId);
     }
 
     @Delete(':id')
-    remove(@Param('id', ParseUUIDPipe) id: string) {
-        const mockUserId = 'f82b7130-6a34-4c61-a1e3-74a789e033a7';
-        return this.productsService.remove(id, mockUserId);
+    remove(@Param('id', ParseUUIDPipe) id: string,
+        @GetUser('userId') userId: string) {
+        return this.productsService.remove(id, userId);
     }
 }

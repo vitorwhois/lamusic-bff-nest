@@ -68,7 +68,14 @@ export class ProductsService {
     async update(id: string, updateProductDto: UpdateProductDto, userId: string, client?: SupabaseClient) {
         const originalProduct = await this.findOne(id, client);
 
-        const updatedProduct = await this.productsRepository.update(id, updateProductDto, client);
+        const { categoryIds, ...productDataOnly } = updateProductDto;
+
+        const updatedProduct = await this.productsRepository.update(id, productDataOnly, client);
+
+        if (categoryIds !== undefined) {
+            await this._updateProductCategories(id, categoryIds, client);
+        }
+
 
         await this.logsService.create({
             productId: id,
@@ -79,6 +86,36 @@ export class ProductsService {
         }, client);
 
         return updatedProduct;
+    }
+
+    private async _updateProductCategories(productId: string, categoryIds: string[], client?: SupabaseClient): Promise<void> {
+        const dbClient = client || this.productsRepository['supabase'].getClient();
+
+        // 1. Remover associações existentes
+        const { error: deleteError } = await dbClient
+            .from('product_categories')
+            .delete()
+            .eq('product_id', productId);
+
+        if (deleteError) {
+            throw new Error(`Could not update product categories (delete step). ${deleteError.message}`);
+        }
+
+        // 2. Adicionar novas associações (se houver)
+        if (categoryIds && categoryIds.length > 0) {
+            const associations = categoryIds.map(categoryId => ({
+                product_id: productId,
+                category_id: categoryId,
+            }));
+
+            const { error: insertError } = await dbClient
+                .from('product_categories')
+                .insert(associations);
+
+            if (insertError) {
+                throw new Error(`Could not update product categories (insert step). ${insertError.message}`);
+            }
+        }
     }
 
     async remove(id: string, userId: string, client?: SupabaseClient) {

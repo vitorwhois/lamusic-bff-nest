@@ -25,7 +25,7 @@ export class SupabaseProductsRepository implements IProductsRepository {
                 description: productDto.description,
                 price: productDto.price,
                 stock_quantity: productDto.stockQuantity,
-                status: productDto.status,
+                status: productDto.status.toLowerCase(),
                 featured: productDto.featured,
             })
             .select()

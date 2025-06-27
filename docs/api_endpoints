@@ -123,7 +123,7 @@ Authorization: Bearer <token>
 
 ### 2.3 Listar Produtos com Estatísticas de Vendas
 Endpoint: `GET /products/with-sales`
-Descrição: Retorna uma lista paginada de produtos com estatísticas de vendas. Devido à complexidade da consulta, este endpoint segue o **padrão de array plano**.
+Descrição: Retorna uma lista paginada de produtos com todos os dados necessários para a listagem do admin, incluindo estatísticas de vendas. Devido à complexidade da consulta, este endpoint segue o **padrão de array plano**.
 Query Parameters:
 - `page` (number, opcional, default: 1): O número da página.
 - `limit` (number, opcional, default: 10): O número de itens por página.
@@ -141,13 +141,17 @@ Authorization: Bearer <token>
   {
     "id": "uuid-do-produto",
     "name": "Guitarra Elétrica Stratocaster Harmony",
+    "description": "A clássica guitarra Stratocaster da Harmony, perfeita para rock e blues.",
     "sku": "GTR-ELE-002",
     "price": "850.00",
     "stock_quantity": 15,
-    "status": "ACTIVE",
+    "status": "active",
+    "featured": true,
+    "category_name": "Instrumentos de Corda",
+    "created_at": "2025-06-27T10:00:00.000Z",
     "completed_orders_count": "25",
     "pending_orders_count": "2",
-    "total_count": "3"
+    "total_count": "39"
   }
 ]
 ```
@@ -155,6 +159,7 @@ Authorization: Bearer <token>
 **Nota sobre a Estrutura e o campo `total_count`**:
 - **Estrutura de Array Plano**: A resposta é um array direto para otimizar a performance da consulta complexa no banco de dados.
 - **`total_count`**: Este campo **não é a soma das vendas**. Ele representa o **número total de produtos que correspondem aos critérios de busca** e é usado para construir a paginação no frontend. Ele terá o mesmo valor para todos os itens retornados em uma única requisição.
+
 -- Débito técnico: responsabilidade do backend entregar a resposta pronta e no formato ideal
 
 ### 2.4 Buscar Produto por ID
@@ -202,11 +207,48 @@ Respostas
 404 Not Found (Falha): Se o produto a ser deletado não for encontrado.
 
 
+3. Módulo de Categorias (/categories)
+Endpoints para o gerenciamento de categorias de produtos.
 
-3. Módulo de Importação (/import)
+Autenticação: Todos os endpoints deste módulo requerem Bearer Token.
+
+### 3.1 Listar Todas as Categorias
+Endpoint: `GET /categories`
+Descrição: Retorna uma lista com todas as categorias de produtos ativas no sistema. Útil para preencher seletores no formulário de criação/edição de produtos.
+
+**Exemplo de Requisição (Postman)**
+Método: `GET`
+URL: `{{baseURL}}/categories`
+Authorization: `Bearer <token>`
+
+**Estrutura da Resposta**
+200 OK (Sucesso): Retorna um array de objetos de categoria.
+```json
+[
+  {
+    "id": "uuid-da-categoria-1",
+    "name": "Instrumentos de Corda",
+    "slug": "instrumentos-de-corda",
+    "description": "Violões, guitarras, baixos, etc.",
+    "parentId": null,
+    "isActive": true
+  },
+  {
+    "id": "uuid-da-categoria-2",
+    "name": "Equipamentos de Áudio",
+    "slug": "equipamentos-de-audio",
+    "description": "Microfones, mixers, amplificadores, etc.",
+    "parentId": null,
+    "isActive": true
+  }
+]
+```
+
+
+4. Módulo de Importação (/import)
 Endpoints para processos de importação de dados.
 
-3.1 Processar NF-e
+4.1 Processar NF-e
 Endpoint: POST /import/nfe
 Descrição: Recebe o conteúdo XML de uma NF-e, valida, extrai os dados do fornecedor e dos produtos, e os cadastra ou atualiza no sistema.
 Autenticação: Requer Bearer Token.
@@ -233,14 +275,14 @@ Respostas
 400 Bad Request (Falha): Se a IA considerar o conteúdo da NF-e inválido.
 
 
-4. Módulo de IA (/ai)
+5. Módulo de IA (/ai)
 Endpoints de utilidade para acessar diretamente as funcionalidades de IA.
 
-4.1 Status do Serviço de IA
+5.1 Status do Serviço de IA
 Endpoint: GET /ai/status
 Descrição: Verifica o status operacional do serviço de IA.
 Autenticação: Pública.
-4.2 Categorizar um Produto
+5.2 Categorizar um Produto
 Endpoint: POST /ai/categorize-product
 Descrição: Sugere uma categoria para um produto com base em seus dados.
 Autenticação: Pública.

@@ -12,6 +12,7 @@ export class SupabaseProductLogsRepository implements IProductLogsRepository {
     constructor(private readonly supabase: SupabaseService) { }
 
     async create(logData: CreateProductLogDto): Promise<ProductLog> {
+        console.log("logData", logData);
         const client = this.supabase.getClient();
         const { data, error } = await client
             .from(this.TABLE_NAME)

@@ -9,7 +9,7 @@ export interface IProductsRepository {
     findAllWithSales(options: { page: number; limit: number }): Promise<any>;
     findById(id: string, client?: SupabaseClient): Promise<Product | null>;
     findBySku(sku: string, client?: SupabaseClient): Promise<Product | null>;
-    update(id: string, productDto: UpdateProductDto, client?: SupabaseClient): Promise<Product>;
+    update(id: string, productDto: Omit<UpdateProductDto, 'categoryIds'>, client?: SupabaseClient): Promise<Product>;
     remove(id: string, client?: SupabaseClient): Promise<void>;
     associateWithCategory(productId: string, categoryId: string, client?: SupabaseClient): Promise<void>;
 }
