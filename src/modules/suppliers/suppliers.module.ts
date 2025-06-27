@@ -1,13 +1,17 @@
 import { Module } from '@nestjs/common';
+import { SuppliersService } from './suppliers.service';
+import { SuppliersController } from './suppliers.controller';
+import { SupabaseSuppliersRepository } from './repositories/supabase-suppliers.repository';
 
-/**
- * Módulo de Fornecedores
- * Responsável pelo gerenciamento de fornecedores extraídos das NFEs
- */
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-  exports: [],
+  controllers: [SuppliersController],
+  providers: [
+    SuppliersService,
+    {
+      provide: 'ISuppliersRepository',
+      useClass: SupabaseSuppliersRepository,
+    },
+  ],
+  exports: [SuppliersService],
 })
-export class SuppliersModule {}
+export class SuppliersModule { }

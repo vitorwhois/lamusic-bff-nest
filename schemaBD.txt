@@ -73,6 +73,15 @@ products {
   TIMESTAMPTZ deleted_at
 }
 
+suppliers {
+  UUID id PK
+  TEXT name
+  TEXT cnpj
+  TIMESTAMPTZ created_at
+  TIMESTAMPTZ updated_at
+  TIMESTAMPTZ deleted_at
+}
+
 
 product_categories {
   UUID id PK
@@ -202,6 +211,8 @@ product_logs {
   UUID responsible_user_id FK
   TIMESTAMPTZ created_at
 }
+
+
 
 
 users ||--o{ addresses : has

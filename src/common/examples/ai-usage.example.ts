@@ -8,7 +8,7 @@ import { AiService } from '../../modules/ai/ai.service';
 
 @Injectable()
 export class ExampleAiUsageService {
-  constructor(private readonly aiService: AiService) {}
+  constructor(private readonly aiService: AiService) { }
 
   /**
    * Exemplo: Processar uma NFE completa
@@ -30,8 +30,8 @@ export class ExampleAiUsageService {
       const products = JSON.parse(extraction.data || '[]');
 
       // 3. Categorizar produtos em lote
-      const categorization = await this.aiService.batchCategorizeProducts(products);
-      const categories = JSON.parse(categorization.data || '[]');
+      /*       const categorization = await this.aiService.batchCategorizeProducts(products);
+            const categories = JSON.parse(categorization.data || '[]'); */
 
       // 4. Retornar dados processados
       return {
@@ -39,10 +39,10 @@ export class ExampleAiUsageService {
         productsCount: products.length,
         products: products.map((product, index) => ({
           ...product,
-          suggestedCategory: categories[index]?.suggestedCategory,
-          confidence: categories[index]?.confidence,
+          /*           suggestedCategory: categories[index]?.suggestedCategory,
+                    confidence: categories[index]?.confidence, */
         })),
-        processingTime: validation.processingTime + extraction.processingTime + categorization.processingTime,
+        processingTime: validation.processingTime + extraction.processingTime, // + categorization.processingTime,
       };
     } catch (error) {
       throw new Error(`Erro no processamento da NFE: ${error.message}`);

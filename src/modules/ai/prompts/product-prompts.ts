@@ -68,47 +68,41 @@ export const PRODUCT_DESCRIPTION_PROMPTS = {
   /**
    * Prompt para descrição básica
    */
-  BASIC_DESCRIPTION: `Crie uma descrição profissional e atrativa para o seguinte produto musical:
+  BASIC_DESCRIPTION: `Você é um especialista em copywriting para e-commerce de instrumentos musicais.
+Crie uma descrição de produto otimizada para vendas para: {productName}.
 
-PRODUTO:
-Nome: {productName}
-Categoria: {category}
-Marca: {brand}
-Características: {features}
+REGRAS:
+- Escreva um texto de 150 a 250 palavras.
+- Use parágrafos curtos e bullets para facilitar a leitura.
+- Foque nos benefícios e na experiência do músico.
+- Termine com uma chamada para ação (call-to-action).
+- NÃO inclua explicações sobre o seu texto. Apenas a descrição.
 
-REQUISITOS:
-- 150-300 palavras
-- Tom profissional mas acessível
-- Foque nos benefícios para o músico
-- Inclua especificações técnicas quando relevante
-- Otimizado para SEO
-- Destaque diferenciais do produto
-
-DESCRIÇÃO:`,
+DESCRIÇÃO DO PRODUTO:`,
 
   /**
    * Prompt para meta descrição SEO
    */
-  META_DESCRIPTION: `Crie uma meta descrição SEO de até 160 caracteres para:
+  META_DESCRIPTION: `Crie uma meta descrição SEO para o produto "{productName}".
 
-Produto: {productName}
-Categoria: {category}
-Marca: {brand}
-
-A meta descrição deve ser atrativa e incluir palavras-chave relevantes.
+REGRAS OBRIGATÓRIAS:
+1. Sua resposta deve ser APENAS o texto da meta descrição.
+2. O texto deve ter entre 140 e 155 caracteres.
+3. NÃO use Markdown, aspas, ou qualquer outro caractere especial.
+4. NÃO explique sua resposta.
 
 META DESCRIÇÃO:`,
 
   /**
    * Prompt para título SEO
    */
-  SEO_TITLE: `Crie um título SEO otimizado de até 60 caracteres para:
+  SEO_TITLE: `Crie um título SEO para o produto "{productName}".
 
-Produto: {productName}
-Categoria: {category}
-Marca: {brand}
-
-O título deve ser claro, incluir palavras-chave e ser atrativo para cliques.
+REGRAS OBRIGATÓRIAS:
+1. Sua resposta deve ser APENAS o texto do título.
+2. O texto deve ter entre 50 e 60 caracteres.
+3. NÃO use Markdown, aspas, ou qualquer outro caractere especial.
+4. NÃO explique sua resposta.
 
 TÍTULO SEO:`,
 };
@@ -178,13 +172,13 @@ export class PromptBuilder {
    */
   static build(template: string, data: Record<string, any>): string {
     let result = template;
-    
+
     for (const [key, value] of Object.entries(data)) {
       const placeholder = `{${key}}`;
       const replacement = value ?? 'Não informado';
       result = result.replace(new RegExp(placeholder, 'g'), replacement);
     }
-    
+
     return result;
   }
 
@@ -222,14 +216,48 @@ export class PromptBuilder {
     });
   }
 
+
   /**
    * Constrói prompt de extração de NFE
    */
   static buildNfeExtractionPrompt(nfeText: string, type: 'product' | 'supplier'): string {
-    const template = type === 'product' 
+    const template = type === 'product'
       ? NFE_EXTRACTION_PROMPTS.PRODUCT_EXTRACTION
       : NFE_EXTRACTION_PROMPTS.SUPPLIER_EXTRACTION;
-    
+
     return this.build(template, { nfeText });
   }
+
+  /**
+ * Constrói prompt de título SEO com dados do produto
+ */
+  static buildSeoTitlePrompt(productData: {
+    name: string;
+    category?: string;
+    brand?: string;
+  }): string {
+    return this.build(PRODUCT_DESCRIPTION_PROMPTS.SEO_TITLE, {
+      productName: productData.name,
+      category: productData.category,
+      brand: productData.brand,
+    });
+  }
+
+
+  /**
+    * Constrói prompt de meta descrição SEO com dados do produto
+    */
+  static buildMetaDescriptionPrompt(productData: {
+    name: string;
+    category?: string;
+    brand?: string;
+  }): string {
+    return this.build(PRODUCT_DESCRIPTION_PROMPTS.META_DESCRIPTION, {
+      productName: productData.name,
+      category: productData.category,
+      brand: productData.brand,
+    });
+  }
+
+
 }

@@ -1,41 +1,16 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { AiService, AiResponse } from './ai.service';
-
-/**
- * DTOs para requests da API de IA
- */
-export class GenerateTextDto {
-  prompt: string;
-  temperature?: number;
-  maxTokens?: number;
-}
-
-export class CategorizeProductDto {
-  name: string;
-  description?: string;
-  brand?: string;
-  sku?: string;
-}
-
-export class GenerateDescriptionDto {
-  name: string;
-  category?: string;
-  features?: string[];
-  brand?: string;
-}
-
-export class ExtractInfoDto {
-  text: string;
-  type: 'product' | 'supplier';
-}
-
+import { GenerateTextDto } from './dto/generate-text.dto';
+import { CategorizeProductDto } from './dto/categorize-product.dto';
+import { GenerateDescriptionDto } from './dto/generate-description.dto';
+import { ExtractInfoDto } from './dto/extract-info.dto';
 /**
  * Controller responsável pelos endpoints de IA
  * Fornece acesso às funcionalidades do Google Gemini
  */
 @Controller('ai')
 export class AiController {
-  constructor(private readonly aiService: AiService) {}
+  constructor(private readonly aiService: AiService) { }
 
   /**
    * Endpoint para verificar o status do serviço de IA

@@ -33,17 +33,25 @@ RESULTADO:`,
 TEXTO NFE:
 {nfeText}
 
-FORMATO DE RETORNO (Array JSON):
+
+
+REGRAS E FORMATO DE RETORNO:
+- A resposta deve ser um Array JSON válido.
+- Responda APENAS com o array JSON, sem nenhum texto adicional, comentários ou formatação Markdown.
+- Não inclua a palavra "json" ou crases  no início ou no fim da resposta.
+- NÃO incluir crases na resposta!
+- O formato de cada objeto no array deve ser:
 [
   {
     "item": 1,
-    "name": "nome do produto",
+    "sku": "código do produto (extraído da tag <cProd>)",
+    "name": "nome do produto (extraído da tag <xProd>)",
     "quantity": 0,
-    "unit": "unidade",
+    "unit": "unidade (extraído da tag <uCom>)",
     "unitPrice": 0.00,
     "totalPrice": 0.00,
     "ncm": "código NCM",
-    "description": "descrição detalhada",
+    "description": "descrição detalhada (pode usar o nome se não houver outra)",
     "brand": "marca se identificada"
   }
 ]
@@ -198,7 +206,7 @@ export class NfePromptBuilder {
    * Constrói prompt para categorização em lote
    */
   static buildBatchCategorizationPrompt(products: any[]): string {
-    const productsList = products.map((p, i) => 
+    const productsList = products.map((p, i) =>
       `${i + 1}. ${p.name} - ${p.description || 'Sem descrição'}`
     ).join('\n');
 
@@ -215,12 +223,12 @@ export class NfePromptBuilder {
     products?: string[];
   }): string {
     let prompt = SUPPLIER_ANALYSIS_PROMPTS.CLASSIFY_SUPPLIER;
-    
+
     prompt = prompt.replace('{supplierName}', supplierData.name);
     prompt = prompt.replace('{supplierCnpj}', supplierData.cnpj);
     prompt = prompt.replace('{supplierAddress}', supplierData.address || 'Não informado');
     prompt = prompt.replace('{products}', supplierData.products?.join(', ') || 'Não informado');
-    
+
     return prompt;
   }
 
@@ -289,13 +297,13 @@ JSON:`;
     updatedProducts: number;
   }): string {
     let prompt = REPORTING_PROMPTS.IMPORT_SUMMARY;
-    
+
     Object.entries(importData).forEach(([key, value]) => {
       const placeholder = `{${key}}`;
       const replacement = Array.isArray(value) ? value.join(', ') : value.toString();
       prompt = prompt.replace(placeholder, replacement);
     });
-    
+
     return prompt;
   }
 }

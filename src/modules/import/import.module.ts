@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
+import { ImportService } from './import.service';
+import { ImportController } from './import.controller';
+import { SuppliersModule } from '../suppliers/suppliers.module';
+import { ProductsModule } from '../products/products.module';
+import { CategoriesModule } from '../categories/categories.module';
+import { AiModule } from '../ai/ai.module';
 
-/**
- * Módulo de Importação
- * Responsável pelo processamento e importação de dados de NFEs
- */
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-  exports: [],
+  imports: [SuppliersModule, ProductsModule, CategoriesModule, AiModule],
+  controllers: [ImportController],
+  providers: [ImportService],
 })
-export class ImportModule {}
+export class ImportModule { }

@@ -1,0 +1,197 @@
+Documentação da API - LaMusic Micro Importer
+Versão: 1.0 URL Base: http://localhost:3002/api/v1
+
+Autenticação
+A maioria dos endpoints desta API é protegida e requer um token de autenticação.
+
+Obtenha o Token: Faça uma requisição para o endpoint POST /auth/login com suas credenciais para receber um accessToken.
+Envie o Token: Para todos os endpoints protegidos, inclua o token no header Authorization da sua requisição.
+Header: Authorization
+Valor: Bearer <seu_accessToken>
+1. Módulo de Autenticação (/auth)
+Endpoints para gerenciar a autenticação de usuários.
+
+1.1 Login de Usuário
+Endpoint: POST /auth/login
+Descrição: Autentica um usuário com base em email e senha e retorna um token JWT para ser usado em requisições subsequentes.
+Autenticação: Pública.
+
+Request Body
+Campo	Tipo	Obrigatório	Descrição
+email	string	Sim	Email de cadastro do usuário.
+password	string	Sim	Senha do usuário (mínimo 6 caracteres).
+
+Exemplo de Requisição (Postman)
+Método: POST
+URL: {{baseURL}}/auth/login
+Headers: Content-Type: application/json
+Body (raw, JSON):
+{
+  "email": "vitor@gmail.com",
+  "password": "sua_senha_aqui"
+}
+
+Respostas
+200 OK (Sucesso):
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlVzdcOhcmlvIFRlc3RlIFBvc3RtYW4iLCJzdWIiOiIwOWIyNjk2Ny0zZGQ2LTRkMzEtOTA4OC01NWMxOGZlNTk4MjYiLCJpYXQiOjE3MTk0NTYwMDAsImV4cCI6MTcxOTU0MjQwMH0.abcdef123456"
+}
+
+401 Unauthorized (Falha): Retornado se as credenciais forem inválidas.
+{
+  "message": "Credenciais inválidas.",
+  "error": "Unauthorized",
+  "statusCode": 401
+}
+
+2. Módulo de Produtos (/products)
+Endpoints para o gerenciamento completo do catálogo de produtos.
+
+Autenticação: Todos os endpoints deste módulo requerem Bearer Token.
+2.1 Criar um Produto
+Endpoint: POST /products
+Descrição: Cria um novo produto no catálogo.
+Request Body (CreateProductDto)
+Campo	Tipo	Obrigatório	Descrição
+name	string	Sim	Nome do produto.
+description	string	Não	Descrição detalhada do produto.
+price	number	Sim	Preço de venda do produto.
+stockQuantity	number	Sim	Quantidade inicial em estoque.
+sku	string	Não	Código de referência único (SKU).
+featured	boolean	Não	Indica se o produto está em destaque.
+status	string	Não	Status do produto (ACTIVE, INACTIVE).
+categoryIds	string[]	Não	Array de UUIDs das categorias associadas.
+Exemplo de Requisição (Postman)
+Método: POST
+URL: {{baseURL}}/products
+Authorization: Bearer <token>
+Body (raw, JSON):
+{
+  "name": "Microfone Condensador Pro-Sound X1",
+  "description": "Microfone de estúdio profissional para gravações de alta qualidade.",
+  "price": 899.90,
+  "stockQuantity": 25,
+  "sku": "MIC-PS-X1-COND",
+  "featured": true,
+  "status": "ACTIVE"
+}
+
+Respostas
+201 Created (Sucesso): Retorna o objeto do produto recém-criado.
+409 Conflict (Falha): Retornado se o sku enviado já existir.
+2.2 Listar Todos os Produtos
+Endpoint: GET /products
+Descrição: Retorna uma lista de todos os produtos não deletados.
+Exemplo de Requisição (Postman)
+Método: GET
+URL: {{baseURL}}/products
+Authorization: Bearer <token>
+Respostas
+200 OK (Sucesso): Retorna um array de objetos de produto.
+2.3 Buscar Produto por ID
+Endpoint: GET /products/:id
+Descrição: Retorna um produto específico pelo seu UUID.
+Exemplo de Requisição (Postman)
+Método: GET
+URL: {{baseURL}}/products/f82b7130-6a34-4c61-a1e3-74a789e033a7
+Authorization: Bearer <token>
+Respostas
+200 OK (Sucesso): Retorna o objeto do produto encontrado.
+404 Not Found (Falha): Se nenhum produto com o ID fornecido for encontrado.
+2.4 Atualizar um Produto
+Endpoint: PATCH /products/:id
+Descrição: Atualiza parcialmente os dados de um produto existente.
+Request Body (UpdateProductDto)
+Aceita qualquer campo do CreateProductDto, todos são opcionais.
+
+Exemplo de Requisição (Postman)
+Método: PATCH
+URL: {{baseURL}}/products/f82b7130-6a34-4c61-a1e3-74a789e033a7
+Authorization: Bearer <token>
+Body (raw, JSON):
+{
+  "price": 849.99,
+  "featured": false
+}
+
+espostas
+200 OK (Sucesso): Retorna o objeto do produto completo após a atualização.
+404 Not Found (Falha): Se o produto a ser atualizado não for encontrado.
+2.5 Deletar um Produto (Soft Delete)
+Endpoint: DELETE /products/:id
+Descrição: Realiza um "soft delete" no produto, preenchendo o campo deleted_at.
+Exemplo de Requisição (Postman)
+Método: DELETE
+URL: {{baseURL}}/products/f82b7130-6a34-4c61-a1e3-74a789e033a7
+Authorization: Bearer <token>
+Respostas
+200 OK (Sucesso): Retorna uma confirmação.
+404 Not Found (Falha): Se o produto a ser deletado não for encontrado.
+3. Módulo de Importação (/import)
+Endpoints para processos de importação de dados.
+
+3.1 Processar NF-e
+Endpoint: POST /import/nfe
+Descrição: Recebe o conteúdo XML de uma NF-e, valida, extrai os dados do fornecedor e dos produtos, e os cadastra ou atualiza no sistema.
+Autenticação: Requer Bearer Token.
+Request Body
+Campo	Tipo	Obrigatório	Descrição
+nfeXmlContent	string	Sim	Conteúdo completo do arquivo XML da NF-e.
+Exemplo de Requisição (Postman)
+Método: POST
+URL: {{baseURL}}/import/nfe
+Authorization: Bearer <token>
+Body (raw, JSON):
+{
+  "nfeXmlContent": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><nfeProc ... </nfeProc>"
+}
+
+Respostas
+201 Created (Sucesso): Retorna um resumo da operação.
+{
+  "message": "NFE processed successfully.",
+  "supplier": { /* objeto do fornecedor */ },
+  "processedProductsCount": 5,
+  "processedProducts": [ /* array de produtos criados/atualizados */ ]
+}
+400 Bad Request (Falha): Se a IA considerar o conteúdo da NF-e inválido.
+
+
+4. Módulo de IA (/ai)
+Endpoints de utilidade para acessar diretamente as funcionalidades de IA.
+
+4.1 Status do Serviço de IA
+Endpoint: GET /ai/status
+Descrição: Verifica o status operacional do serviço de IA.
+Autenticação: Pública.
+4.2 Categorizar um Produto
+Endpoint: POST /ai/categorize-product
+Descrição: Sugere uma categoria para um produto com base em seus dados.
+Autenticação: Pública.
+Request Body
+Campo	Tipo	Obrigatório
+name	string	Sim
+description	string	Não
+brand	string	Não
+sku	string	Não
+Exemplo de Requisição (Postman)
+Método: POST
+URL: {{baseURL}}/ai/categorize-product
+Body (raw, JSON):
+{
+    "name": "Bateria Acústica PowerDrum 5 Peças",
+    "description": "Kit de bateria completo com bumbo, tons, surdo e caixa. Ideal para iniciantes.",
+    "brand": "PowerDrum"
+}
+
+Respostas
+201 Created (Sucesso): Retorna um objeto AiResponse com a categoria sugerida.
+{
+    "success": true,
+    "data": "Instrumentos de Percussão",
+    "processingTime": 1234,
+    "tokensUsed": 50
+}
+
+
+

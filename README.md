@@ -40,18 +40,53 @@ npm run start:dev
 
 ```
 src/
-├── modules/
-│   ├── ai/           # Integração com IA
-│   ├── auth/         # Autenticação
-│   ├── categories/   # Categorias de produtos
-│   ├── config/       # Configurações
-│   ├── database/     # Conexão com banco
-│   ├── import/       # Importação de NFEs
-│   ├── logs/         # Sistema de logs
-│   ├── products/     # Catálogo de produtos
-│   └── suppliers/    # Fornecedores
 ├── app.module.ts
-└── main.ts
+├── main.ts
+└── modules/
+    ├── ai/
+    │   ├── ai.controller.ts
+    │   ├── ai.module.ts
+    │   └── ai.service.ts
+    ├── categories/
+    │   ├── categories.controller.ts
+    │   ├── categories.module.ts
+    │   ├── categories.service.ts
+    │   ├── dto/
+    │   ├── entities/
+    │   └── repositories/
+    ├── config/
+    │   └── config.module.ts
+    ├── database/
+    │   ├── database.controller.ts
+    │   ├── database.module.ts
+    │   ├── supabase.service.ts
+    │   └── types/
+    ├── import/
+    │   ├── import.controller.ts
+    │   ├── import.module.ts
+    │   └── import.service.ts
+    │   └── dto/
+    ├── logs/
+    │   ├── logs.controller.ts
+    │   ├── logs.module.ts
+    │   ├── logs.service.ts
+    │   ├── dto/
+    │   ├── entities/
+    │   └── repositories/
+    ├── products/
+    │   ├── products.controller.ts
+    │   ├── products.module.ts
+    │   ├── products.service.ts
+    │   ├── dto/
+    │   ├── entities/
+    │   └── repositories/
+    └── suppliers/
+        ├── suppliers.controller.ts
+        ├── suppliers.module.ts
+        ├── suppliers.service.ts
+        ├── dto/
+        ├── entities/
+        └── repositories/
 ```
 
 ## Comandos Disponíveis
