@@ -10,12 +10,16 @@ Microserviço de Catálogo e Importação para o ecossistema LaMusic.
 - Auditoria completa de operações
 - API REST para integração
 
-## Tecnologias
+## 🚀 Funcionalidades Principais
 
-- **NestJS** - Framework Node.js
-- **Supabase** - Banco de dados e autenticação
-- **Google Gemini** - Inteligência artificial
-- **TypeScript** - Linguagem principal
+-   **Importação de NF-e Atômica**: Processa arquivos XML de NF-e de forma transacional, garantindo a consistência dos dados.
+-   **Catálogo de Produtos**: Gerenciamento completo de produtos, incluindo estoque, preços e variações.
+-   **Categorização com IA**: Utiliza Google Gemini para analisar e categorizar novos produtos automaticamente com base nas categorias existentes.
+-   **Enriquecimento de Dados**: Gera automaticamente descrições de marketing e metadados de SEO para produtos.
+-   **Gerenciamento de Fornecedores**: Cadastra e atualiza fornecedores a partir dos dados da NF-e.
+-   **Auditoria Completa**: Registra logs detalhados para todas as operações de criação, atualização e exclusão.
+-   **API RESTful Segura**: Endpoints protegidos para integração com outros serviços do ecossistema LaMusic.
+
 
 ## Configuração
 
@@ -106,6 +110,8 @@ npm run test:e2e
 npm run lint
 ```
 
-## API Endpoints
+## 📚 Documentação da API
 
-A documentação completa da API estará disponível em `/api/docs` quando o servidor estiver rodando.
+A documentação completa da API, gerada com Swagger, está disponível no endpoint `/api/docs` quando o servidor está em execução.
+
+Para uma análise detalhada dos fluxos de negócio, consulte a documentação na pasta `/docs`.
