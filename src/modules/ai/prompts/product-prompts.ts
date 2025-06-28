@@ -199,6 +199,37 @@ export class PromptBuilder {
     });
   }
 
+
+  /**
+ * Prompt para categorização com categorias limitadas
+ */
+  static buildCategorizationPromptWithExistingCategories(
+    productInfo: any,
+    availableCategories: string[]
+  ): string {
+    return `Você é um especialista em instrumentos musicais e equipamentos de áudio.
+Analise as informações do produto e determine qual categoria EXISTENTE é mais apropriada.
+
+PRODUTO A CATEGORIZAR:
+Nome: ${productInfo.name}
+Descrição: ${productInfo.description || 'Não informada'}
+Marca: ${productInfo.brand || 'Não informada'}
+SKU: ${productInfo.sku || 'Não informado'}
+
+CATEGORIAS DISPONÍVEIS (escolha APENAS uma destas):
+${availableCategories.map((cat, index) => `${index + 1}. ${cat}`).join('\n')}
+
+REGRAS IMPORTANTES:
+- Responda APENAS com o nome EXATO de uma das categorias listadas acima
+- NÃO crie novas categorias
+- NÃO sugira categorias que não estão na lista
+- Se não tiver certeza, escolha a categoria mais genérica apropriada
+- Seja preciso e consistente
+
+CATEGORIA ESCOLHIDA:`;
+  }
+
+
   /**
    * Constrói prompt de descrição com dados do produto
    */

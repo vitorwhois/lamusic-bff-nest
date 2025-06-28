@@ -311,39 +311,69 @@ Respostas
     "tokensUsed": 50
 }
 
-6. Módulo de Pedidos (/orders)
+# 6. Módulo de Pedidos (/orders)
 Endpoints para gerenciamento e análise de pedidos.
 
-Autenticação: Todos os endpoints deste módulo requerem Bearer Token.
+**Autenticação:** Todos os endpoints deste módulo requerem Bearer Token.
 
-### 6.1 Relatório de Pedidos
-Endpoint: `GET /orders/report`
-Descrição: Retorna um relatório completo de pedidos com métricas agregadas e dados para análise administrativa. Inclui filtros por período, status e busca.
+## 6.1 Relatório de Pedidos (MELHORADO)
+**Endpoint:** `GET /orders/report`  
+**Descrição:** Retorna um relatório completo de pedidos com métricas agregadas e dados para análise administrativa. Inclui filtros avançados por período, status e busca granular.
 
-**Query Parameters**
+### **Query Parameters**
 | Parâmetro | Tipo | Obrigatório | Descrição |
 | :--- | :--- | :--- | :--- |
-| `startDate` | string (ISO8601) | Não | Data inicial do período (ex: 2025-01-01T00:00:00Z) |
-| `endDate` | string (ISO8601) | Não | Data final do período (ex: 2025-12-31T23:59:59Z) |
-| `status` | string | Não | Filtrar por status específico (PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED) |
-| `search` | string | Não | Buscar por número do pedido, nome ou email do cliente |
+| `startDate` | string (Date/ISO8601) | Não | Data inicial do período. Aceita formato YYYY-MM-DD ou ISO8601 completo |
+| `endDate` | string (Date/ISO8601) | Não | Data final do período. Aceita formato YYYY-MM-DD ou ISO8601 completo |
+| `status` | string | Não | **NOVO:** Filtrar por status específico (pending, processing, shipped, delivered, cancelled, confirmed, completed) |
+| `orderNumber` | string | Não | **NOVO:** Filtrar especificamente por número do pedido (busca parcial) |
+| `customerName` | string | Não | **NOVO:** Filtrar especificamente por nome do cliente (busca parcial) |
+| `search` | string | Não | Busca geral (número do pedido, nome ou email do cliente). Não funciona junto com filtros específicos |
 | `page` | number | Não | Número da página (default: 1) |
-| `limit` | number | Não | Itens por página (default: 20) |
+| `limit` | number | Não | Itens por página (default: 20, máx: 100) |
 
-**Exemplo de Requisição (Postman)**
-Método: `GET`
-URL: `{{baseURL}}/orders/report?startDate=2025-01-01T00:00:00Z&endDate=2025-12-31T23:59:59Z&page=1&limit=20`
-Authorization: `Bearer <token>`
+### **Exemplos de Requisição (Postman)**
 
-**Estrutura da Resposta**
-200 OK (Sucesso): Retorna dados paginados com métricas agregadas.
+**1. Filtro por Status:**
+```
+GET {{baseURL}}/orders/report?status=delivered&page=1&limit=10
+```
+
+**2. Filtro por Período:**
+```
+GET {{baseURL}}/orders/report?startDate=2025-06-01&endDate=2025-06-30
+```
+
+**3. Filtro por Número do Pedido:**
+```
+GET {{baseURL}}/orders/report?orderNumber=ORD-2025&page=1&limit=10
+```
+
+**4. Filtro por Nome do Cliente:**
+```
+GET {{baseURL}}/orders/report?customerName=joão silva&page=1&limit=10
+```
+
+**5. Filtros Combinados:**
+```
+GET {{baseURL}}/orders/report?status=pending&customerName=maria&startDate=2025-06-01T00:00:00Z&endDate=2025-06-30T23:59:59Z
+```
+
+**6. Busca Geral:**
+```
+GET {{baseURL}}/orders/report?search=silva&page=1&limit=10
+```
+
+### **Estrutura da Resposta**
+**200 OK (Sucesso):** Retorna dados paginados com métricas agregadas.
+
 ```json
 {
   "orders": [
     {
       "id": "uuid-do-pedido",
       "orderNumber": "ORD-2025-001",
-      "status": "DELIVERED",
+      "status": "delivered",
       "customerName": "João Silva",
       "customerEmail": "joao@email.com",
       "itemsCount": 3,
@@ -368,19 +398,40 @@ Authorization: `Bearer <token>`
 }
 ```
 
-### 6.2 Listar Pedidos (CRUD Básico)
-Endpoint: `GET /orders`
-Descrição: Lista pedidos com paginação simples.
+### **Campos Detalhados da Resposta**
 
-### 6.3 Buscar Pedido por ID
-Endpoint: `GET /orders/:id`
-Descrição: Retorna detalhes completos de um pedido específico.
+#### **Objeto Order (dentro do array orders):**
+| Campo | Tipo | Descrição |
+| :--- | :--- | :--- |
+| `id` | UUID | Identificador único do pedido |
+| `orderNumber` | string | Número do pedido (ex: ORD-2025-001) |
+| `status` | string | Status atual (lowercase: pending, delivered, etc.) |
+| `customerName` | string | Nome completo do cliente |
+| `customerEmail` | string | Email do cliente |
+| `itemsCount` | number | Quantidade total de itens no pedido |
+| `totalAmount` | number | Valor total do pedido |
+| `shippingCity` | string | Cidade de entrega |
+| `shippingState` | string | Estado de entrega |
+| `hasCoupon` | boolean | Se o pedido utilizou cupom de desconto |
+| `couponCode` | string\|null | Código do cupom utilizado |
+| `hasInactiveProducts` | boolean | **🚨 ALERTA:** Se contém produtos descontinuados |
+| `hasPaymentPending` | boolean | **⚠️ ALERTA:** Se há pagamento pendente |
+| `approximateMargin` | number | Margem de lucro aproximada |
+| `createdAt` | ISO8601 | Data/hora de criação do pedido |
+| `totalCount` | number | Total de registros (para paginação) |
 
-### 6.4 Atualizar Pedido
-Endpoint: `PATCH /orders/:id`
-Descrição: Atualiza dados de um pedido (principalmente status).
+#### **Objeto Summary:**
+| Campo | Tipo | Descrição |
+| :--- | :--- | :--- |
+| `totalOrders` | number | Total de pedidos no período filtrado |
+| `totalSales` | number | Soma total das vendas |
+| `averageOrderValue` | number | Ticket médio (calculado automaticamente) |
+| `totalMargin` | number | Margem total de lucro |
 
-### 6.5 Criar Pedido
-Endpoint: `POST /orders`
-Descrição: Cria um novo pedido no sistema.
+### **Notas Importantes:**
+- **Filtros Específicos:** `orderNumber`, `customerName`, `status` podem ser combinados
+- **Busca Geral:** `search` só funciona quando filtros específicos não são usados
+- **Case-insensitive:** Todos os filtros de texto são insensíveis a maiúsculas/minúsculas
+- **Partial Match:** Filtros de texto usam correspondência parcial
+- **Formato de Data:** Aceita tanto YYYY-MM-DD quanto ISO8601 completo
 

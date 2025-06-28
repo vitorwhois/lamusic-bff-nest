@@ -4,6 +4,7 @@ import { CreateCategoryDto } from '../dto/create-category.dto';
 import { Category } from '../entities/category.entity';
 import { ICategoriesRepository } from './icategories.repository';
 import { DatabaseCategory } from '../../database/types/database.types';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class SupabaseCategoriesRepository implements ICategoriesRepository {
@@ -60,6 +61,45 @@ export class SupabaseCategoriesRepository implements ICategoriesRepository {
         }
         return data ? this.mapToEntity(data) : null;
     }
+
+    async findByName(name: string, client?: SupabaseClient): Promise<Category | null> {
+        const dbClient = client || this.supabase.getClient();
+
+        const { data, error } = await dbClient
+            .from(this.TABLE_NAME)
+            .select('*')
+            .ilike('name', name)
+            .is('deleted_at', null)
+            .eq('is_active', true)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return null;
+            }
+            throw new Error(`Could not find category by name. ${error.message}`);
+        }
+
+        return this.mapToEntity(data);
+    }
+
+    async findAllActive(client?: SupabaseClient): Promise<Category[]> {
+        const dbClient = client || this.supabase.getClient();
+
+        const { data, error } = await dbClient
+            .from(this.TABLE_NAME)
+            .select('*')
+            .eq('is_active', true)
+            .is('deleted_at', null)
+            .order('sort_order', { ascending: true });
+
+        if (error) {
+            throw new Error(`Could not retrieve active categories. ${error.message}`);
+        }
+
+        return data.map(this.mapToEntity);
+    }
+
 
     private mapToEntity(dbRecord: DatabaseCategory): Category {
         return {

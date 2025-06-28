@@ -3,6 +3,7 @@ import { AiService } from '../ai/ai.service';
 import { SuppliersService } from '../suppliers/suppliers.service';
 import { ProductsService } from '../products/products.service';
 import { CategoriesService } from '../categories/categories.service';
+import { PromptBuilder } from '../ai/prompts/product-prompts';
 
 @Injectable()
 export class ImportService {
@@ -76,21 +77,28 @@ export class ImportService {
         return this.suppliersService.transaction(async (client) => {
             this.logger.log('Iniciando transação de banco de dados para importação...');
 
-            // Encontrar ou criar o fornecedor DENTRO da transação
+            // 1. Buscar todas as categorias ativas disponíveis
+            const availableCategories = await this.categoriesService.getAllActiveCategories(client);
+            const categoryNames = availableCategories.map(cat => cat.name);
+
+            this.logger.log(`Categorias disponíveis: ${categoryNames.join(', ')}`);
+
+            // Encontrar ou criar o fornecedor
             let supplier = await this.suppliersService.findByCnpj(supplierData.cnpj, client);
             if (!supplier) {
                 supplier = await this.suppliersService.create({
                     name: supplierData.name,
                     cnpj: supplierData.cnpj,
-                }, client); // <-- Passando o client
+                }, client);
             }
 
-            // Processar cada produto DENTRO da transação
+            // Processar cada produto
             const processedProducts = [];
             for (const product of productsData) {
-                // Passamos o client para todas as chamadas de serviço
                 let existingProduct = await this.productsService.findBySku(product.sku, client);
+
                 if (existingProduct) {
+                    // Produto existe - apenas atualizar estoque
                     const updated = await this.productsService.update(
                         existingProduct.id,
                         { stockQuantity: existingProduct.stockQuantity + product.quantity },
@@ -99,30 +107,73 @@ export class ImportService {
                     );
                     processedProducts.push(updated);
                 } else {
+                    // PRODUTO NOVO - Fluxo completo
+                    this.logger.log(`Criando novo produto: ${product.name}`);
+
                     // Passo 1: Criar o produto com os dados básicos da NFE
-                    let newProd = await this.productsService.create(
-                        {
-                            name: product.name,
-                            price: product.unitPrice,
-                            stockQuantity: product.quantity,
-                            sku: product.sku,
-                            description: product.description || product.name,
-                        },
-                        userId,
-                        client,
-                    );
+                    let newProd = await this.productsService.create({
+                        name: product.name,
+                        price: product.unitPrice,
+                        stockQuantity: product.quantity,
+                        sku: product.sku,
+                        description: product.description || product.name,
+                        status: 'active',
+                        featured: false,
+                    }, userId, client);
 
-                    this.logger.log(`Produto [${newProd.name}] criado. Iniciando enriquecimento com IA...`);
+                    this.logger.log(`Produto [${newProd.name}] criado. Iniciando categorização...`);
 
-                    // Passo 2: Enriquecer o produto recém-criado com descrições e SEO da IA
+                    // Passo 2: CATEGORIZAÇÃO COM CATEGORIAS EXISTENTES APENAS
+                    try {
+                        if (categoryNames.length > 0) {
+                            // Usar prompt específico com categorias limitadas
+                            const categorizationPrompt = PromptBuilder.buildCategorizationPromptWithExistingCategories(
+                                {
+                                    name: product.name,
+                                    description: product.description || product.name,
+                                    brand: product.brand,
+                                    sku: product.sku,
+                                },
+                                categoryNames
+                            );
+
+                            const categorizationResult = await this.aiService.generateText(categorizationPrompt, {
+                                temperature: 0.3,
+                                maxTokens: 100,
+                            });
+
+                            if (categorizationResult.success && categorizationResult.data) {
+                                const suggestedCategoryName = categorizationResult.data.trim();
+
+                                // Buscar categoria EXISTENTE
+                                const category = await this.categoriesService.findByName(suggestedCategoryName, client);
+
+                                if (category) {
+                                    // ✅ APENAS ASSOCIA - NÃO CRIA NOVA CATEGORIA
+                                    await this.productsService.associateWithCategory(newProd.id, category.id, client);
+                                    this.logger.log(`Produto [${newProd.name}] associado à categoria existente [${category.name}]`);
+                                } else {
+                                    // ❌ CATEGORIA NÃO ENCONTRADA - Log mas não falha
+                                    this.logger.warn(`Categoria sugerida "${suggestedCategoryName}" não encontrada nas categorias existentes. Produto criado sem categoria.`);
+                                }
+                            } else {
+                                this.logger.warn(`IA não conseguiu categorizar o produto [${newProd.name}]`);
+                            }
+                        } else {
+                            this.logger.warn('Nenhuma categoria ativa encontrada no sistema. Produto criado sem categoria.');
+                        }
+                    } catch (categorizationError) {
+                        this.logger.error(`Erro na categorização do produto [${newProd.name}]:`, categorizationError.message);
+                        // Continua sem categoria - não falha a importação
+                    }
+
+                    // Passo 3: ENRIQUECIMENTO COM IA
                     try {
                         const enrichedData = await this.aiService.generateFullProductEnrichment({
                             name: newProd.name,
                             brand: product.brand,
-                            // Podemos adicionar mais features aqui no futuro se a IA extrair
                         });
 
-                        // Passo 3: Atualizar o produto com os dados enriquecidos
                         newProd = await this.productsService.update(
                             newProd.id,
                             {
@@ -135,23 +186,22 @@ export class ImportService {
                         );
 
                         this.logger.log(`Produto [${newProd.name}] enriquecido com sucesso.`);
-
                     } catch (aiError) {
-                        this.logger.error(`Falha ao enriquecer o produto [${newProd.name}] com a IA. O produto foi criado com dados básicos.`, aiError.stack);
-                        // Decidimos não falhar a transação inteira se apenas o enriquecimento falhar.
-                        // O produto ainda existirá com os dados da NFE.
+                        this.logger.error(`Falha ao enriquecer o produto [${newProd.name}] com a IA:`, aiError.message);
                     }
 
                     processedProducts.push(newProd);
                 }
             }
 
-            this.logger.log('Transação concluída com sucesso. Commitando alterações.');
+            this.logger.log('Transação concluída com sucesso.');
             return {
                 message: 'NFE processed successfully within a transaction.',
                 supplier,
                 processedProductsCount: processedProducts.length,
                 processedProducts,
+                categorizedProducts: processedProducts.filter(p => p.id), // Apenas produtos categorizados
+                availableCategoriesCount: categoryNames.length,
             };
         });
     }

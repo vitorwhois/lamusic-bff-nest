@@ -2,6 +2,8 @@ import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { ICategoriesRepository } from './repositories/icategories.repository';
 import { AiService } from '../ai/ai.service';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Category } from './entities/category.entity';
 
 @Injectable()
 export class CategoriesService {
@@ -31,6 +33,16 @@ export class CategoriesService {
 
     findAll() {
         return this.categoriesRepository.findAll();
+    }
+    async findByName(name: string, client?: SupabaseClient): Promise<Category | null> {
+        return this.categoriesRepository.findByName(name, client);
+    }
+
+    /**
+     * Lista todas as categorias ativas (para referência da IA)
+     */
+    async getAllActiveCategories(client?: SupabaseClient): Promise<Category[]> {
+        return this.categoriesRepository.findAllActive(client);
     }
 
     async suggestCategoryForProduct(productName: string, productDescription?: string) {

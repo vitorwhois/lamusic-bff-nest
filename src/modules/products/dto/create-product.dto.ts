@@ -27,7 +27,7 @@ export class CreateProductDto {
 
     @IsString()
     @IsOptional()
-    status?: 'ACTIVE' | 'INACTIVE';
+    status?: 'active' | 'inactive';
 
     @IsArray()
     @IsUUID('4', { each: true })

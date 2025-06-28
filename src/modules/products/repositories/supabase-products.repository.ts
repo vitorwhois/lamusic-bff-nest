@@ -169,6 +169,26 @@ export class SupabaseProductsRepository implements IProductsRepository {
         if (error) throw new Error(`Could not associate product with category. ${error.message}`);
     }
 
+    async findBySlug(slug: string, client?: SupabaseClient): Promise<Product | null> {
+        const dbClient = client || this.supabase.getClient();
+
+        const { data, error } = await dbClient
+            .from(this.TABLE_NAME)
+            .select('*')
+            .eq('slug', slug)
+            .is('deleted_at', null)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return null;
+            }
+            throw new Error(`Could not find product by slug. ${error.message}`);
+        }
+
+        return this.mapToEntity(data);
+    }
+
     private mapToEntity(dbRecord: DatabaseProduct): Product {
         return {
             id: dbRecord.id,

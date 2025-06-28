@@ -14,23 +14,41 @@ export class ProductsService {
         private readonly logsService: LogsService,
     ) { }
 
-    private generateSlug(name: string): string {
-        return name
+    private async _generateUniqueSlug(name: string, client?: SupabaseClient, attempt: number = 0): Promise<string> {
+        // Gerar slug base
+        let baseSlug = name
             .toLowerCase()
-            .replace(/ /g, '-')
-            .replace(/[^\w-]+/g, '');
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+            .replace(/[^a-z0-9\s-]/g, '') // Remove caracteres especiais
+            .trim()
+            .replace(/\s+/g, '-') // Substitui espaços por hífens
+            .replace(/-+/g, '-') // Remove hífens duplicados
+            .substring(0, 100); // Limita o tamanho
+
+        // Adicionar sufixo se for uma tentativa repetida
+        const slug = attempt > 0 ? `${baseSlug}-${attempt}` : baseSlug;
+
+        // Verificar se o slug já existe
+        const existingProduct = await this.productsRepository.findBySlug(slug, client);
+
+        if (existingProduct) {
+            // Slug existe, tentar novamente com sufixo incrementado
+            return this._generateUniqueSlug(name, client, attempt + 1);
+        }
+
+        return slug;
     }
 
     async create(createProductDto: CreateProductDto, userId: string, client?: SupabaseClient) {
         if (createProductDto.sku) {
-            // CORREÇÃO: Passar o client
             const existing = await this.productsRepository.findBySku(createProductDto.sku, client);
             if (existing) {
                 throw new ConflictException(`Product with SKU "${createProductDto.sku}" already exists.`);
             }
         }
 
-        const slug = this.generateSlug(createProductDto.name);
+        const slug = await this._generateUniqueSlug(createProductDto.name, client);
         const product = await this.productsRepository.create(createProductDto, slug, client);
 
         if (createProductDto.categoryIds) {
@@ -133,5 +151,9 @@ export class ProductsService {
 
     public async findBySku(sku: string, client?: SupabaseClient): Promise<Product | null> {
         return this.productsRepository.findBySku(sku, client);
+    }
+
+    async associateWithCategory(productId: string, categoryId: string, client?: SupabaseClient): Promise<void> {
+        return this.productsRepository.associateWithCategory(productId, categoryId, client);
     }
 }
