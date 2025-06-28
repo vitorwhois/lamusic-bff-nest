@@ -6,6 +6,8 @@ import { Order, OrdersReport, OrderListItem } from '../entities/order.entity';
 import { CreateOrderDto } from '../dto/create-order.dto';
 import { UpdateOrderDto } from '../dto/update-order.dto';
 import { OrdersReportQueryDto } from '../dto/orders-report-query.dto';
+import { StatusNormalizer } from '../../../common/utils/status-normalizer.util';
+
 
 @Injectable()
 export class SupabaseOrdersRepository implements IOrdersRepository {
@@ -20,7 +22,7 @@ export class SupabaseOrdersRepository implements IOrdersRepository {
             .insert({
                 user_id: orderDto.userId,
                 order_number: orderDto.orderNumber,
-                status: orderDto.status.toLowerCase(),
+                status: StatusNormalizer.normalize(orderDto.status),
                 subtotal: orderDto.subtotal,
                 shipping_cost: orderDto.shippingCost || 0,
                 tax_amount: orderDto.taxAmount || 0,
@@ -118,10 +120,19 @@ export class SupabaseOrdersRepository implements IOrdersRepository {
             p_limit: query.limit || 20,
         };
 
+        // Filtros de data
         if (query.startDate) rpcParams.p_start_date = query.startDate;
         if (query.endDate) rpcParams.p_end_date = query.endDate;
-        if (query.status) rpcParams.p_status = query.status.toUpperCase();
-        if (query.search) rpcParams.p_search_term = query.search;
+
+        // MELHORIA: Filtros específicos granulares
+        if (query.status) rpcParams.p_status = query.status;
+        if (query.orderNumber) rpcParams.p_order_number = query.orderNumber;
+        if (query.customerName) rpcParams.p_customer_name = query.customerName;
+
+        // Busca geral (só é usada se os filtros específicos não estiverem definidos)
+        if (query.search && !query.orderNumber && !query.customerName) {
+            rpcParams.p_search_term = query.search;
+        }
 
         const { data, error } = await client.rpc('get_orders_report', rpcParams);
 
@@ -152,7 +163,7 @@ export class SupabaseOrdersRepository implements IOrdersRepository {
         const orders: OrderListItem[] = data.map(row => ({
             id: row.id,
             orderNumber: row.order_number,
-            status: row.status,
+            status: row.status || 'pending',
             customerName: row.customer_name,
             customerEmail: row.customer_email,
             itemsCount: Number(row.items_count),
@@ -176,7 +187,7 @@ export class SupabaseOrdersRepository implements IOrdersRepository {
             id: dbRecord.id,
             userId: dbRecord.user_id,
             orderNumber: dbRecord.order_number,
-            status: dbRecord.status.toUpperCase(),
+            status: dbRecord.status || 'pending',
             subtotal: Number(dbRecord.subtotal),
             shippingCost: Number(dbRecord.shipping_cost),
             taxAmount: Number(dbRecord.tax_amount),
