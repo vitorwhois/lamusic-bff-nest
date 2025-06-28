@@ -14,10 +14,10 @@ async function bootstrap() {
 
   // Configuração de CORS para permitir comunicação entre microsserviços
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+    origin: process.env.ALLOWED_ORIGINS?.split(','),
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
     credentials: true,
-    methods: ['GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS'],
-    allowedHeaders: ['Content-Type, Accept, Authorization'],
   });
 
   // Configuração de validação global
